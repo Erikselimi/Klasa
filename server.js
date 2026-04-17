@@ -14,6 +14,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "class_portal_state";
 
+// Koment në shqip: orari bazë i javës kur nuk ka ende të dhëna të tjera
 const DEFAULT_SCHEDULE = {
   monday: "Matematikë, Gjuhë shqipe",
   tuesday: "Histori, Biologji",
@@ -22,20 +23,24 @@ const DEFAULT_SCHEDULE = {
   friday: "Art, Edukim fizik, Këshillim klase"
 };
 
+// Koment në shqip: artikujt fillestarë të dyqanit të lojës
 const DEFAULT_SHOP = [
   { id: "lucky_ticket", name: "Biletë me Fat", price: 25, effectLabel: "Shton fat", description: "Një shans për të rritur fitimin në lojën tjetër." },
   { id: "shield", name: "Mbrojtje", price: 40, effectLabel: "Mbron humbjen", description: "Mbron nga humbja e parë në një duel ose bet." },
   { id: "double", name: "Double Up", price: 30, effectLabel: "Dyfishon fitimin", description: "Dyfishon fitimin në një fitore të ardhshme." }
 ];
 
+// Koment në shqip: krijon një ID unike për profilet, mesazhet dhe ngjarjet
 function uid() {
   return crypto.randomUUID();
 }
 
+// Koment në shqip: ruan kohën aktuale në format të standardizuar
 function now() {
   return new Date().toISOString();
 }
 
+// Koment në shqip: gjendja fillestare e gjithë faqes së klasës
 function defaultData() {
   return {
     profiles: [
@@ -74,6 +79,7 @@ function defaultData() {
   };
 }
 
+// Koment në shqip: rregullon të dhënat që të kenë gjithmonë të njëjtën formë
 function normalizeData(input) {
   const fresh = defaultData();
   return {
@@ -97,6 +103,7 @@ function normalizeData(input) {
   };
 }
 
+// Koment në shqip: nëse ka Supabase, ruajmë aty; përndryshe përdorim file lokal
 const hasSupabase = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const supabase = hasSupabase
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -104,6 +111,7 @@ const supabase = hasSupabase
     })
   : null;
 
+// Koment në shqip: lexon gjendjen nga backend-i ose nga file lokal
 async function readData() {
   if (supabase) {
     const { data, error } = await supabase
@@ -137,6 +145,7 @@ async function readData() {
   }
 }
 
+// Koment në shqip: shkruan gjendjen në Supabase ose në file lokal
 async function writeData(data) {
   if (supabase) {
     const payload = normalizeData(data);
@@ -151,6 +160,7 @@ async function writeData(data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
+// Koment në shqip: përgjigje JSON për endpoint-et API
 function sendJson(res, status, payload) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -159,11 +169,13 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+// Koment në shqip: përgjigje tekst për file statik ose mesazhe gabimi
 function sendText(res, status, text, contentType = "text/plain; charset=utf-8") {
   res.writeHead(status, { "Content-Type": contentType });
   res.end(text);
 }
 
+// Koment në shqip: lexon trupin e kërkesës POST si JSON
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -181,12 +193,14 @@ function parseBody(req) {
   });
 }
 
+// Koment në shqip: shfaq emrin, mbiemrin, dhe nëse ka, nofkën
 function displayName(profile) {
   if (!profile) return "";
   const full = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
   return profile.nickname ? `${full} (${profile.nickname})` : full;
 }
 
+// Koment në shqip: pikët dhe paratë mbahen si numra të pastër
 function pointsFor(profile) {
   return Number(profile.points || 0);
 }
@@ -195,15 +209,18 @@ function moneyFor(profile) {
   return Number(profile.money || 0);
 }
 
+// Koment në shqip: gjen profilin sipas clientId-së
 function getProfile(data, clientId) {
   return data.profiles.find((p) => p.id === clientId) || null;
 }
 
+// Koment në shqip: kontrollon nëse kërkesa ka token të krijuesit
 function requireAdmin(req, adminSessions) {
   const token = req.headers["x-creator-token"];
   return token && adminSessions.has(String(token));
 }
 
+// Koment në shqip: ndërton gjendjen që i dërgohet browser-it
 function makeState(data, req, adminSessions) {
   const clientId = req.headers["x-client-id"] || req.headers["x-clientid"] || "";
   const me = clientId ? getProfile(data, clientId) : null;
@@ -218,6 +235,7 @@ function makeState(data, req, adminSessions) {
   };
 }
 
+// Koment në shqip: shërben index.html dhe file të tjerë statikë nga i njëjti server
 function routeStatic(req, res, pathname) {
   if (pathname === "/" || pathname === "/index.html") {
     const html = fs.readFileSync(INDEX_FILE, "utf8");
@@ -228,14 +246,17 @@ function routeStatic(req, res, pathname) {
 }
 
 async function main() {
+  // Koment në shqip: ngarkon të dhënat dhe mban sesionet e krijuesit në memorie
   let data = await readData();
   const adminSessions = new Set();
 
+  // Koment në shqip: ruan gjendjen dhe pastaj i kthen përgjigje klientit
   async function saveAndRespond(res, payload) {
     await writeData(data);
     sendJson(res, 200, payload);
   }
 
+  // Koment në shqip: krijon ose përditëson profilin e një nxënësi
   function updateProfileFromBody(body) {
     const clientId = String(body.clientId || "").trim() || uid();
     let profile = getProfile(data, clientId);
@@ -270,6 +291,7 @@ async function main() {
     return profile;
   }
 
+  // Koment në shqip: shton mesazh të ri në chat me emrin e profilit
   function addChatMessage(body) {
     const profile = getProfile(data, body.clientId);
     const author = profile ? (profile.nickname?.trim() || displayName(profile)) : "Anëtar i klasës";
@@ -283,10 +305,12 @@ async function main() {
     });
   }
 
+  // Koment në shqip: pastron chat-in, por lë një mesazh sistemi
   function clearChat() {
     data.chat = [{ id: uid(), type: "system", author: "Sistemi", text: "Chat-i u pastrua.", createdAt: now() }];
   }
 
+  // Koment në shqip: shton një pikë dhe 5 bucks për një kategori të caktuar
   function adminPoint(body) {
     const profile = getProfile(data, body.id);
     if (!profile) throw new Error("Profili nuk u gjet.");
@@ -303,6 +327,7 @@ async function main() {
     });
   }
 
+  // Koment në shqip: heq një anëtar nga lista e klasës
   function adminDelete(body) {
     const idx = data.profiles.findIndex((p) => p.id === body.id);
     if (idx === -1) throw new Error("Profili nuk u gjet.");
@@ -316,6 +341,7 @@ async function main() {
     });
   }
 
+  // Koment në shqip: ruan orarin e javës me 5 ditë
   function adminSchedule(body) {
     data.schedule = {
       monday: body.monday || data.schedule.monday,
@@ -326,6 +352,7 @@ async function main() {
     };
   }
 
+  // Koment në shqip: bet i thjeshtë me fitore ose humbje të rastësishme
   function doBet(body, mode) {
     const profile = getProfile(data, body.playerId);
     if (!profile) throw new Error("Lojtari nuk u gjet.");
@@ -346,6 +373,7 @@ async function main() {
     return { won, message: `${displayName(profile)} ${won ? "fitoi" : "humbi"} ${wager}$ në ${mode}. Tani ka ${profile.money}$.` };
   }
 
+  // Koment në shqip: duel 1v1 që i jep fituesit pot-in e betit
   function doDuel(body) {
     const left = getProfile(data, body.leftId);
     const right = getProfile(data, body.rightId);
@@ -379,6 +407,7 @@ async function main() {
     return { won: winner.id === left.id, message: `${displayName(winner)} fitoi duel-in kundër ${displayName(loser)} dhe mori ${pot}$.` };
   }
 
+  // Koment në shqip: blen një artikull nga dyqani i lojës
   function buyShopItem(body) {
     const profile = getProfile(data, body.clientId);
     if (!profile) throw new Error("Duhet profil për të blerë.");
@@ -398,6 +427,7 @@ async function main() {
     });
   }
 
+  // Koment në shqip: serveri HTTP që i shërben faqes dhe API-t
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
@@ -508,6 +538,7 @@ async function main() {
     }
   });
 
+  // Koment në shqip: nis serverin në portin që jep hosting-u
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -516,6 +547,7 @@ async function main() {
   });
 }
 
+// Koment në shqip: nis gjithë aplikacionin dhe kap gabimet e startup-it
 main().catch((err) => {
   console.error(err);
   process.exit(1);

@@ -209,11 +209,13 @@
         <a href="#shop">Store</a>
         <a href="#games">Lojërat</a>
         <a href="#biseda">Biseda</a>
+        <button id="openSourceBtn" type="button">Shfaq kodin</button>
         <button id="openCreatorBtn" type="button">Krijuesi</button>
       </nav>
     </div>
   </header>
 
+  <!-- Seksioni kryesor: prezanton faqen dhe idenë e klasës -->
   <section class="hero">
     <div class="container hero-grid">
       <div class="card hero-main">
@@ -251,6 +253,7 @@
 
   <main>
     <div class="container">
+      <!-- Anëtarët: këtu shfaqet profili i çdo nxënësi -->
       <section class="card section" id="anetaresia">
         <div class="section-head">
           <div>
@@ -274,6 +277,7 @@
         <div class="roster" id="roster"></div>
       </section>
 
+      <!-- Orari: 5 ditë, dhe vetëm krijuesi e ndryshon -->
       <section class="card section" id="orari">
         <div class="section-head">
           <div>
@@ -285,6 +289,7 @@
         <div class="grid-3" id="scheduleGrid"></div>
       </section>
 
+      <!-- Dyqani i lojës: artikuj që blihen me bucks -->
       <section class="card section" id="shop">
         <div class="section-head">
           <div>
@@ -296,6 +301,7 @@
         <div class="grid-3" id="shopGrid"></div>
       </section>
 
+      <!-- Lojërat: bet dhe duel 1v1 -->
       <section class="card section" id="games">
         <div class="section-head">
           <div>
@@ -349,6 +355,7 @@
         </div>
       </section>
 
+      <!-- Leaderboard: rendit kush ka më shumë para -->
       <section class="card section" id="leaderboard">
         <div class="section-head">
           <div>
@@ -373,6 +380,7 @@
         </div>
       </section>
 
+      <!-- Historia: ruan duel-et që ndodhin -->
       <section class="card section" id="history">
         <div class="section-head">
           <div>
@@ -396,6 +404,7 @@
         </div>
       </section>
 
+      <!-- Chat: mesazhet e klasës me tekst dhe foto -->
       <section class="card section" id="biseda">
         <div class="section-head">
           <div>
@@ -426,6 +435,7 @@
         </div>
       </section>
 
+      <!-- Paneli i krijuesit: editime, fshirje, dhe orar -->
       <section class="card section hidden" id="creatorPanel">
         <div class="section-head">
           <div>
@@ -511,7 +521,7 @@
   </main>
 
   <div class="footer">
-    <!-- Koment në shqip: faqja është vetëm frontend; backend-i e bën të përbashkët -->
+    <!-- Koment në shqip: frontend-i e shfaq, backend-i e ruan për të gjithë -->
     <p>© 2026 Klasa 10B. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
   </div>
 
@@ -559,7 +569,33 @@
     </div>
   </div>
 
+  <!-- Shikuesi i kodit: hap source-in brenda faqes për prezantim -->
+  <div class="modal-backdrop" id="sourceModal">
+    <div class="modal" style="width:min(980px, 100%);">
+      <div class="modal-head">
+        <div>
+          <h2>Shfaq kodin</h2>
+          <p class="section-lead" style="margin:0;">Zgjidh file-in që do të shfaqësh para klasës.</p>
+        </div>
+        <button class="btn btn-secondary" id="closeSourceBtn" type="button">Mbyll</button>
+      </div>
+      <div class="panel">
+        <div class="chips">
+          <button class="btn btn-secondary source-tab" type="button" data-source="index.html">index.html</button>
+          <button class="btn btn-secondary source-tab" type="button" data-source="server.js">server.js</button>
+          <button class="btn btn-secondary source-tab" type="button" data-source="supabase-schema.sql">supabase-schema.sql</button>
+          <button class="btn btn-secondary source-tab" type="button" data-source="README.md">README.md</button>
+        </div>
+        <div class="mini-card">
+          <p class="note" id="sourceCaption" style="margin:0 0 10px;">Zgjidh një file për ta parë.</p>
+          <pre id="sourceViewer" style="margin:0; max-height:56vh; overflow:auto; white-space:pre-wrap; word-break:break-word; font: 13px/1.5 'Courier New', monospace; background:#0f1720; color:#e5f0eb; padding:16px; border-radius:16px;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Koment në shqip: kodi më poshtë lidh faqen me serverin dhe rifreskon ndërfaqen
     const API_BASE = location.origin;
     const STORAGE = {
       clientId: "klasa-client-id",
@@ -577,6 +613,14 @@
       creatorActive: false,
       lastGameMessage: "",
       lastDuelMessage: ""
+    };
+
+    // Koment në shqip: file-t që shfaqen në panelin "Shfaq kodin"
+    const SOURCE_FILES = {
+      "index.html": "/index.html",
+      "server.js": "/server.js",
+      "supabase-schema.sql": "/supabase-schema.sql",
+      "README.md": "/README.md"
     };
 
     function uid() {
@@ -623,8 +667,19 @@
     function openModal(el) { el.classList.add("open"); }
     function closeModal(el) { el.classList.remove("open"); }
 
+    // Koment në shqip: gjen profilin aktiv nga id-ja e pajisjes
     function currentMe() {
       return state.profiles.find((p) => p.id === getClientId()) || state.me;
+    }
+
+    // Koment në shqip: ngarkon source-in e zgjedhur për prezantim
+    async function loadSource(fileName) {
+      const url = SOURCE_FILES[fileName];
+      if (!url) return;
+      $("#sourceCaption").textContent = `Duke shfaqur: ${fileName}`;
+      $("#sourceViewer").textContent = "Duke ngarkuar kodin...";
+      const res = await fetch(`${API_BASE}${url}`);
+      $("#sourceViewer").textContent = await res.text();
     }
 
     function profileDisplay(profile) {
@@ -658,6 +713,7 @@
       if (type === "loss") el.classList.add("animate-loss");
     }
 
+    // Koment në shqip: render-i i vetëm për të gjitha kartat dhe listat
     function render() {
       const me = currentMe();
       $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
@@ -967,11 +1023,17 @@
 
     $("#openSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
     $("#heroSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
+    $("#openSourceBtn").addEventListener("click", async () => {
+      openModal($("#sourceModal"));
+      await loadSource("index.html");
+    });
     $("#openCreatorBtn").addEventListener("click", () => openModal($("#creatorModal")));
     $("#closeSignupBtn").addEventListener("click", () => closeModal($("#signupModal")));
     $("#closeCreatorBtn").addEventListener("click", () => closeModal($("#creatorModal")));
+    $("#closeSourceBtn").addEventListener("click", () => closeModal($("#sourceModal")));
     $("#signupModal").addEventListener("click", (e) => { if (e.target === $("#signupModal")) closeModal($("#signupModal")); });
     $("#creatorModal").addEventListener("click", (e) => { if (e.target === $("#creatorModal")) closeModal($("#creatorModal")); });
+    $("#sourceModal").addEventListener("click", (e) => { if (e.target === $("#sourceModal")) closeModal($("#sourceModal")); });
     $("#signupForm").addEventListener("submit", (e) => { e.preventDefault(); createOrUpdateProfile().catch(alert); });
     $("#clearProfileBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE.clientId); location.reload(); });
     $("#creatorLoginBtn").addEventListener("click", () => creatorLogin().catch((err) => alert(err.message)));
@@ -988,6 +1050,10 @@
     $("#saveStudentBtn").addEventListener("click", () => saveStudent().catch(alert));
     $("#deleteStudentBtn").addEventListener("click", () => deleteStudent().catch(alert));
     $("#studentSelect").addEventListener("change", render);
+    $("#sourceModal").addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-source]");
+      if (tab) loadSource(tab.dataset.source).catch(alert);
+    });
 
     $("#roster").addEventListener("click", async (event) => {
       const pointBtn = event.target.closest("[data-admin-point]");
