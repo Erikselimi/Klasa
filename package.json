@@ -1,0 +1,12 @@
+{
+  "name": "klasa-jone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0"
+  }
+}
