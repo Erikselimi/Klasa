@@ -311,6 +311,39 @@
           <span class="badge" id="gameBadge">Gati për lojë</span>
         </div>
 
+        <div class="mini-card" style="margin-bottom:16px;">
+          <h3>Match online</h3>
+          <p class="note" style="margin-bottom:12px;">Hyr në radhë dhe faqja do të të përputhë me dikë tjetër që po kërkon ndeshje.</p>
+          <div class="grid-2">
+            <div class="field">
+              <label for="matchStake">Beti i match-it</label>
+              <input id="matchStake" type="number" min="1" step="1" value="10" />
+            </div>
+            <div class="field">
+              <label for="matchState">Gjendja</label>
+              <input id="matchState" type="text" value="Nuk je në radhë" readonly />
+            </div>
+          </div>
+          <div class="actions" style="margin-top:12px;">
+            <button class="btn btn-primary" id="joinMatchBtn" type="button">Kërko match</button>
+            <button class="btn btn-secondary" id="leaveMatchBtn" type="button">Dil nga radha</button>
+          </div>
+          <div style="height:12px;"></div>
+          <div class="table-wrap">
+            <table style="min-width:100%;">
+              <thead>
+                <tr>
+                  <th>Radhë</th>
+                  <th>Lojtari</th>
+                  <th>Beti</th>
+                  <th>Koha</th>
+                </tr>
+              </thead>
+              <tbody id="matchQueueBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="grid-2">
           <div class="mini-card">
             <h3>Bëj bet</h3>
@@ -608,6 +641,7 @@
       profiles: [],
       schedule: {},
       chat: [],
+      matchQueue: [],
       shop: [],
       history: [],
       creatorActive: false,
@@ -735,6 +769,9 @@
       $("#chatImage").disabled = !me;
       $("#sendChatBtn").disabled = !me;
       $("#sendChatBtn").textContent = me ? "Dërgo" : "Hap signup";
+      $("#matchState").value = me
+        ? (state.matchQueue.some((entry) => entry.clientId === me.id) ? "Je në radhë për match" : "Nuk je në radhë")
+        : "Hape signup";
 
       const yourSlot = $("#yourProfileSlot");
       if (me) {
@@ -836,6 +873,15 @@
         </tr>
       `).join("");
 
+      $("#matchQueueBody").innerHTML = (state.matchQueue || []).map((entry, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(entry.name)}</td>
+          <td>${Number(entry.stake || 0)}$</td>
+          <td>${new Date(entry.createdAt).toLocaleTimeString("sq-AL", { hour: "2-digit", minute: "2-digit" })}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="4" class="note">S’ka ende askënd në radhë.</td></tr>`;
+
       $("#chatFeed").innerHTML = state.chat.slice().reverse().map((m) => {
         if (m.type === "system") {
           return `<div class="message system"><div>${escapeHtml(m.text)}</div></div>`;
@@ -878,6 +924,7 @@
       state.profiles = data.profiles || [];
       state.schedule = data.schedule || {};
       state.chat = data.chat || [];
+      state.matchQueue = data.matchQueue || [];
       state.shop = data.shop || [];
       state.history = data.history || [];
       state.creatorActive = data.creatorActive || false;
@@ -1021,6 +1068,25 @@
       await loadState();
     }
 
+    async function joinMatch() {
+      await api("/api/game/match/join", {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: getClientId(),
+          stake: Number($("#matchStake").value || 0)
+        })
+      });
+      await loadState();
+    }
+
+    async function leaveMatch() {
+      await api("/api/game/match/leave", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      await loadState();
+    }
+
     $("#openSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
     $("#heroSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
     $("#openSourceBtn").addEventListener("click", async () => {
@@ -1046,6 +1112,8 @@
     $("#betDiceBtn").addEventListener("click", () => playBet("dice").catch(alert));
     $("#betCoinBtn").addEventListener("click", () => playBet("coin").catch(alert));
     $("#startDuelBtn").addEventListener("click", () => startDuel().catch(alert));
+    $("#joinMatchBtn").addEventListener("click", () => joinMatch().catch(alert));
+    $("#leaveMatchBtn").addEventListener("click", () => leaveMatch().catch(alert));
     $("#saveScheduleBtn").addEventListener("click", () => saveSchedule().catch(alert));
     $("#saveStudentBtn").addEventListener("click", () => saveStudent().catch(alert));
     $("#deleteStudentBtn").addEventListener("click", () => deleteStudent().catch(alert));

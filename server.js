@@ -74,6 +74,7 @@ function defaultData() {
       { id: uid(), type: "system", author: "Sistemi", text: "Mirë se erdhët në chat-in e klasës.", createdAt: now() }
     ],
     history: [],
+    matchQueue: [],
     shop: DEFAULT_SHOP,
     creatorActive: false
   };
@@ -98,6 +99,7 @@ function normalizeData(input) {
     schedule: { ...fresh.schedule, ...(input.schedule || {}) },
     chat: Array.isArray(input.chat) ? input.chat : fresh.chat,
     history: Array.isArray(input.history) ? input.history : fresh.history,
+    matchQueue: Array.isArray(input.matchQueue) ? input.matchQueue : fresh.matchQueue,
     shop: Array.isArray(input.shop) ? input.shop : fresh.shop,
     creatorActive: Boolean(input.creatorActive)
   };
@@ -230,6 +232,7 @@ function makeState(data, req, adminSessions) {
     schedule: data.schedule,
     chat: data.chat,
     history: data.history,
+    matchQueue: data.matchQueue,
     shop: data.shop,
     creatorActive: requireAdmin(req, adminSessions)
   };
@@ -407,6 +410,81 @@ async function main() {
     return { won: winner.id === left.id, message: `${displayName(winner)} fitoi duel-in kundër ${displayName(loser)} dhe mori ${pot}$.` };
   }
 
+  // Koment në shqip: fut lojtarin në radhën e ndeshjeve dhe auto-pair kur ka dikë tjetër
+  function joinMatchQueue(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për të hyrë në match.");
+
+    const stake = Math.max(1, Number(body.stake || 0));
+    data.matchQueue = (data.matchQueue || []).filter((entry) => entry.clientId !== profile.id);
+
+    const meEntry = {
+      id: uid(),
+      clientId: profile.id,
+      name: displayName(profile),
+      stake,
+      createdAt: now()
+    };
+
+    const opponent = data.matchQueue.find((entry) => entry.clientId !== profile.id);
+    if (!opponent) {
+      data.matchQueue.push(meEntry);
+      data.chat.unshift({
+        id: uid(),
+        type: "system",
+        author: "Sistemi",
+        text: `${displayName(profile)} po kërkon ndeshje për ${stake}$.`,
+        createdAt: now()
+      });
+      return { waiting: true, queue: data.matchQueue };
+    }
+
+    data.matchQueue = data.matchQueue.filter((entry) => entry.clientId !== opponent.clientId);
+    const opponentProfile = getProfile(data, opponent.clientId);
+    if (!opponentProfile) throw new Error("Profili i kundërshtarit nuk u gjet.");
+
+    const pot = Math.min(stake, Number(opponent.stake || 0), moneyFor(profile), moneyFor(opponentProfile));
+    if (pot <= 0) throw new Error("Nuk ka para të mjaftueshme për match.");
+
+    const winner = Math.random() >= 0.5 ? profile : opponentProfile;
+    const loser = winner.id === profile.id ? opponentProfile : profile;
+    winner.money = moneyFor(winner) + pot;
+    loser.money = Math.max(0, moneyFor(loser) - pot);
+    winner.updatedAt = now();
+    loser.updatedAt = now();
+
+    data.history.push({
+      createdAt: now(),
+      leftName: displayName(profile),
+      rightName: opponent.name,
+      winnerName: displayName(winner),
+      amount: pot,
+      type: "matchmaking"
+    });
+    data.chat.unshift({
+      id: uid(),
+      type: "system",
+      author: "Sistemi",
+      text: `Match u gjet: ${displayName(profile)} kundër ${opponent.name}. Fituesi mori ${pot}$.`,
+      createdAt: now()
+    });
+
+    return {
+      waiting: false,
+      matched: true,
+      queue: data.matchQueue,
+      message: `${displayName(profile)} u përputh me ${opponent.name} për ${pot}$. Fituesi: ${displayName(winner)}.`
+    };
+  }
+
+  // Koment në shqip: largo profilin nga radhë nëse nuk do më të presë
+  function leaveMatchQueue(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për të dalë nga match.");
+    data.matchQueue = (data.matchQueue || []).filter((entry) => entry.clientId !== profile.id);
+    return { queue: data.matchQueue };
+  }
+
   // Koment në shqip: blen një artikull nga dyqani i lojës
   function buyShopItem(body) {
     const profile = getProfile(data, body.clientId);
@@ -511,6 +589,18 @@ async function main() {
       if (req.method === "POST" && pathname === "/api/game/duel") {
         const body = await parseBody(req);
         const result = doDuel(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/match/join") {
+        const body = await parseBody(req);
+        const result = joinMatchQueue(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/match/leave") {
+        const body = await parseBody(req);
+        const result = leaveMatchQueue(body);
         return saveAndRespond(res, result);
       }
 
