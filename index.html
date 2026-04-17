@@ -198,7 +198,7 @@
       <div class="brand">
         <div class="brand-mark">K</div>
         <div>
-          <div>Klasa 10B</div>
+          <div>Klasa 9/1</div>
           <small style="color:var(--muted); font-weight:700;">Portal i klasës në shqip</small>
         </div>
       </div>
@@ -555,7 +555,7 @@
 
   <div class="footer">
     <!-- Koment në shqip: frontend-i e shfaq, backend-i e ruan për të gjithë -->
-    <p>© 2026 Klasa 10B. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
+    <p>© 2026 Klasa 9/1. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
   </div>
 
   <div class="modal-backdrop" id="signupModal">
@@ -769,6 +769,19 @@
       $("#chatImage").disabled = !me;
       $("#sendChatBtn").disabled = !me;
       $("#sendChatBtn").textContent = me ? "Dërgo" : "Hap signup";
+      $("#mondayInput").value = state.schedule.monday || "";
+      $("#tuesdayInput").value = state.schedule.tuesday || "";
+      $("#wednesdayInput").value = state.schedule.wednesday || "";
+      $("#thursdayInput").value = state.schedule.thursday || "";
+      $("#fridayInput").value = state.schedule.friday || "";
+      const scheduleEditable = !!state.creatorActive;
+      $("#mondayInput").disabled = !scheduleEditable;
+      $("#tuesdayInput").disabled = !scheduleEditable;
+      $("#wednesdayInput").disabled = !scheduleEditable;
+      $("#thursdayInput").disabled = !scheduleEditable;
+      $("#fridayInput").disabled = !scheduleEditable;
+      $("#saveScheduleBtn").disabled = !scheduleEditable;
+      $("#saveScheduleBtn").textContent = scheduleEditable ? "Ruaj orarin" : "Vetëm krijuesi";
       $("#matchState").value = me
         ? (state.matchQueue.some((entry) => entry.clientId === me.id) ? "Je në radhë për match" : "Nuk je në radhë")
         : "Hape signup";
@@ -910,11 +923,6 @@
         $("#editRole").value = selected.role || "";
       }
 
-      $("#mondayInput").value = state.schedule.monday || "";
-      $("#tuesdayInput").value = state.schedule.tuesday || "";
-      $("#wednesdayInput").value = state.schedule.wednesday || "";
-      $("#thursdayInput").value = state.schedule.thursday || "";
-      $("#fridayInput").value = state.schedule.friday || "";
     }
 
     async function loadState() {

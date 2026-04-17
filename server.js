@@ -321,13 +321,6 @@ async function main() {
     profile.points = pointsFor(profile) + 1;
     profile.money = moneyFor(profile) + 5;
     profile.updatedAt = now();
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `${displayName(profile)} mori 1 pikë për ${kind}.`,
-      createdAt: now()
-    });
   }
 
   //heq një anëtar nga lista e klasës
@@ -335,13 +328,6 @@ async function main() {
     const idx = data.profiles.findIndex((p) => p.id === body.id);
     if (idx === -1) throw new Error("Profili nuk u gjet.");
     const removed = data.profiles.splice(idx, 1)[0];
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `${displayName(removed)} u fshi nga krijuesi.`,
-      createdAt: now()
-    });
   }
 
   //ruan orarin e javës me 5 ditë
@@ -366,13 +352,6 @@ async function main() {
     const won = Math.random() >= 0.5;
     profile.money = Math.max(0, current + (won ? wager : -wager));
     profile.updatedAt = now();
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `${displayName(profile)} ${won ? "fitoi" : "humbi"} ${wager}$ në ${mode}.`,
-      createdAt: now()
-    });
     return { won, message: `${displayName(profile)} ${won ? "fitoi" : "humbi"} ${wager}$ në ${mode}. Tani ka ${profile.money}$.` };
   }
 
@@ -400,13 +379,6 @@ async function main() {
       winnerName: displayName(winner),
       amount: pot
     });
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `${displayName(winner)} fitoi duel kundër ${displayName(loser)} për ${pot}$.`,
-      createdAt: now()
-    });
     return { won: winner.id === left.id, message: `${displayName(winner)} fitoi duel-in kundër ${displayName(loser)} dhe mori ${pot}$.` };
   }
 
@@ -429,13 +401,6 @@ async function main() {
     const opponent = data.matchQueue.find((entry) => entry.clientId !== profile.id);
     if (!opponent) {
       data.matchQueue.push(meEntry);
-      data.chat.unshift({
-        id: uid(),
-        type: "system",
-        author: "Sistemi",
-        text: `${displayName(profile)} po kërkon ndeshje për ${stake}$.`,
-        createdAt: now()
-      });
       return { waiting: true, queue: data.matchQueue };
     }
 
@@ -461,14 +426,6 @@ async function main() {
       amount: pot,
       type: "matchmaking"
     });
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `Match u gjet: ${displayName(profile)} kundër ${opponent.name}. Fituesi mori ${pot}$.`,
-      createdAt: now()
-    });
-
     return {
       waiting: false,
       matched: true,
@@ -496,13 +453,6 @@ async function main() {
     profile.inventory = profile.inventory || [];
     profile.inventory.push({ itemId: item.id, name: item.name, boughtAt: now() });
     profile.updatedAt = now();
-    data.chat.unshift({
-      id: uid(),
-      type: "system",
-      author: "Sistemi",
-      text: `${displayName(profile)} bleu "${item.name}".`,
-      createdAt: now()
-    });
   }
 
   //  serveri HTTP që i shërben faqes dhe API-t
