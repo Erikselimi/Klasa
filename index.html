@@ -554,7 +554,7 @@
   </main>
 
   <div class="footer">
-    <!-- Koment në shqip: frontend-i e shfaq, backend-i e ruan për të gjithë -->
+    <!--frontend-i e shfaq, backend-i e ruan për të gjithë -->
     <p>© 2026 Klasa 9/1. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
   </div>
 
@@ -628,7 +628,7 @@
   </div>
 
   <script>
-    // Koment në shqip: kodi më poshtë lidh faqen me serverin dhe rifreskon ndërfaqen
+    //kodi më poshtë lidh faqen me serverin dhe rifreskon ndërfaqen
     const API_BASE = location.origin;
     const STORAGE = {
       clientId: "klasa-client-id",
@@ -649,7 +649,7 @@
       lastDuelMessage: ""
     };
 
-    // Koment në shqip: file-t që shfaqen në panelin "Shfaq kodin"
+    //file-t që shfaqen në panelin "Shfaq kodin"
     const SOURCE_FILES = {
       "index.html": "/index.html",
       "server.js": "/server.js",
@@ -701,12 +701,12 @@
     function openModal(el) { el.classList.add("open"); }
     function closeModal(el) { el.classList.remove("open"); }
 
-    // Koment në shqip: gjen profilin aktiv nga id-ja e pajisjes
+    //  gjen profilin aktiv nga id-ja e pajisjes
     function currentMe() {
       return state.profiles.find((p) => p.id === getClientId()) || state.me;
     }
 
-    // Koment në shqip: ngarkon source-in e zgjedhur për prezantim
+    //  ngarkon source-in e zgjedhur për prezantim
     async function loadSource(fileName) {
       const url = SOURCE_FILES[fileName];
       if (!url) return;
@@ -747,7 +747,7 @@
       if (type === "loss") el.classList.add("animate-loss");
     }
 
-    // Koment në shqip: render-i i vetëm për të gjitha kartat dhe listat
+    //  render-i i vetëm për të gjitha kartat dhe listat
     function render() {
       const me = currentMe();
       $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
