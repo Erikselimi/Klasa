@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klasa Jonë</title>
+  <style>
+    :root {
+      --bg: #f6f1e9;
+      --bg2: #eef5f3;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-strong: #fff;
+      --text: #13212a;
+      --muted: #637382;
+      --primary: #14532d;
+      --primary-2: #0f766e;
+      --accent: #9a3412;
+      --danger: #b42318;
+      --success: #15803d;
+      --border: #d9e1db;
+      --shadow: 0 18px 50px rgba(18, 33, 43, 0.09);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Trebuchet MS", "Verdana", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(20, 83, 45, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.11), transparent 26%),
+        linear-gradient(180deg, #fbfaf6 0%, var(--bg) 45%, var(--bg2) 100%);
+      line-height: 1.55;
+    }
+    a { color: inherit; }
+    .container { width: min(1200px, calc(100% - 32px)); margin: 0 auto; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-top: 18px; padding: 16px 20px; border-radius: 999px;
+      background: var(--surface); border: 1px solid rgba(217, 225, 219, 0.95);
+      box-shadow: var(--shadow); backdrop-filter: blur(12px);
+    }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; color:var(--primary); }
+    .brand-mark {
+      width: 44px; height: 44px; border-radius: 50%; display:grid; place-items:center;
+      color:#fff; font-weight:900; background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      box-shadow: 0 10px 18px rgba(20,83,45,.22);
+    }
+    nav { display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:flex-end; }
+    nav a, nav button {
+      border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
+      font: inherit; font-weight: 700; padding: 10px 14px; border-radius: 999px;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    nav a:hover, nav button:hover { transform: translateY(-1px); background: rgba(255,255,255,.8); border-color: var(--border); }
+
+    .hero { padding: 22px 0 8px; }
+    .hero-grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:22px; align-items:stretch; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); backdrop-filter: blur(10px);
+    }
+    .hero-main {
+      padding: 34px; min-height: 360px; display:flex; flex-direction:column; justify-content:space-between;
+      background: linear-gradient(135deg, rgba(20,83,45,.08), rgba(15,118,110,.06)), var(--surface);
+    }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:8px; width: fit-content; padding: 8px 14px;
+      border-radius: 999px; background: rgba(20,83,45,.1); color: var(--primary); font-weight: 800; font-size: .94rem;
+    }
+    h1 { margin: 18px 0 14px; font-family: Georgia, "Times New Roman", serif; letter-spacing: -.03em; line-height:1.02; font-size: clamp(2.3rem, 4vw, 4.4rem); }
+    .lead { max-width: 70ch; margin:0; color: var(--muted); font-size: 1.05rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top: 24px; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px;
+      border-radius: 14px; border: 1px solid transparent; font: inherit; font-weight: 800; cursor: pointer;
+      text-decoration:none; transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; box-shadow: 0 12px 22px rgba(20,83,45,.2); }
+    .btn-secondary { background:#fff; color:var(--text); border-color: var(--border); }
+    .btn-danger { background:#fff4f3; border-color:#ffd7d4; color:var(--danger); }
+
+    .hero-side { padding:22px; display:grid; gap:14px; }
+    .info-box {
+      padding:18px; border-radius:18px; background: linear-gradient(180deg, #fff, #f6faf7);
+      border:1px solid var(--border);
+    }
+    .info-title { margin:0 0 6px; font-size:1rem; }
+    .info-value { margin:0; color: var(--muted); }
+
+    main { padding: 10px 0 44px; }
+    .section { margin-top: 24px; padding: 28px; }
+    .section-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+    .section h2 { margin:0 0 8px; font-size: 1.78rem; font-family: Georgia, "Times New Roman", serif; letter-spacing:-.02em; }
+    .section-lead { margin:0; color: var(--muted); max-width: 72ch; }
+    .badge {
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--border);
+      background: rgba(255,255,255,.72); color: var(--muted); font-size:.92rem; font-weight:700;
+    }
+    .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; }
+    .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:16px; }
+    .mini-card {
+      padding:18px; border-radius:18px; border:1px solid var(--border); background: linear-gradient(180deg,#fff,#fbfdfc);
+    }
+    .mini-card h3 { margin:0 0 10px; font-size:1.04rem; }
+    .mini-card p { margin:0; color: var(--muted); }
+
+    .stats { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:14px; margin-top:18px; }
+    .stat { padding:16px; border-radius:18px; border:1px solid var(--border); background: rgba(255,255,255,.78); }
+    .stat strong { display:block; font-size:1.5rem; margin-bottom:4px; }
+    .stat span { color: var(--muted); font-size:.95rem; }
+
+    .roster {
+      display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:14px;
+    }
+    .student-card {
+      padding:18px; border-radius:18px; border:1px solid var(--border); background: linear-gradient(180deg, #fff, #f8fbf9);
+      display:grid; gap:14px;
+    }
+    .student-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .student-name { margin:0; font-size:1.08rem; font-weight:800; }
+    .student-meta { margin-top:4px; color: var(--muted); font-size:.95rem; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip {
+      display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; background:#eef7ef; color:var(--primary);
+      font-size:.88rem; font-weight:800;
+    }
+    .chip.neutral { background:#eef2f6; color:#4f6477; }
+    .chip.good { background:#ecfdf3; color: var(--success); }
+    .student-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .student-actions .btn { padding:10px 14px; }
+
+    .table-wrap { overflow-x:auto; border-radius:18px; border:1px solid var(--border); }
+    table { width:100%; border-collapse:collapse; min-width:760px; background:#fff; }
+    th, td { padding:13px 12px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:#f7faf8; color:var(--primary); font-size:.92rem; }
+
+    .feed {
+      height:360px; overflow:auto; display:grid; gap:12px; padding:16px; border-radius:18px; border:1px solid var(--border);
+      background: linear-gradient(180deg, #fff, #f7faf8);
+    }
+    .message {
+      max-width:min(700px, 92%); padding:12px 14px; border-radius:18px; background:#fff; border:1px solid var(--border);
+      box-shadow: 0 8px 18px rgba(18,33,43,.04);
+    }
+    .message.self { margin-left:auto; background:#eef7ef; border-color:#d8ebde; }
+    .message.system { margin:0 auto; background:#f1f5f9; color:var(--muted); font-style:italic; text-align:center; }
+    .message-head {
+      display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:8px; font-size:.8rem; color: var(--muted);
+    }
+    .message img { display:block; width:100%; max-width:420px; margin-top:10px; border-radius:14px; }
+
+    .composer { display:grid; gap:12px; }
+    .field { display:grid; gap:8px; }
+    .field label { font-weight:800; font-size:.92rem; }
+    .field input, .field textarea, .field select {
+      width:100%; padding:12px 13px; border:1px solid var(--border); border-radius:14px; background:#fff; color:var(--text); font:inherit; outline:none;
+    }
+    .field textarea { resize: vertical; min-height:110px; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: rgba(20,83,45,.7); box-shadow: 0 0 0 3px rgba(20,83,45,.12); }
+    .note { color: var(--muted); font-size:.92rem; }
+    .hidden { display:none !important; }
+
+    .modal-backdrop {
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:18px; background: rgba(8,15,10,.56); z-index:60;
+    }
+    .modal-backdrop.open { display:flex; }
+    .modal { width:min(760px, 100%); padding:22px; border-radius:24px; background:#fff; border:1px solid var(--border); box-shadow: 0 30px 80px rgba(18,33,43,.24); }
+    .modal-head { display:flex; justify-content:space-between; align-items:start; gap:12px; margin-bottom:16px; }
+    .modal-head h2 { margin:0 0 6px; font-family: Georgia, "Times New Roman", serif; }
+    .panel { display:grid; gap:14px; }
+    .footer { padding:0 0 28px; text-align:center; color: var(--muted); }
+
+    .animate-pop { animation: pop .45s ease; }
+    .animate-win { animation: winGlow .6s ease; }
+    .animate-loss { animation: lossGlow .6s ease; }
+    @keyframes pop { from { transform: scale(.98); opacity:.6; } to { transform: scale(1); opacity:1; } }
+    @keyframes winGlow { 0% { box-shadow: 0 0 0 rgba(21,128,61,0); } 60% { box-shadow: 0 0 0 7px rgba(21,128,61,.15); } 100% { box-shadow: 0 0 0 rgba(21,128,61,0); } }
+    @keyframes lossGlow { 0% { box-shadow: 0 0 0 rgba(180,35,24,0); } 60% { box-shadow: 0 0 0 7px rgba(180,35,24,.15); } 100% { box-shadow: 0 0 0 rgba(180,35,24,0); } }
+
+    @media (max-width: 1000px) {
+      .hero-grid, .grid-2, .grid-3, .roster, .stats { grid-template-columns: 1fr; }
+      .topbar { border-radius:24px; align-items:flex-start; flex-direction:column; }
+      nav { justify-content:flex-start; }
+    }
+    @media (max-width: 720px) {
+      .hero-main, .section { padding:22px; }
+      .student-top, .modal-head { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">K</div>
+        <div>
+          <div>Klasa 10B</div>
+          <small style="color:var(--muted); font-weight:700;">Portal i klasës në shqip</small>
+        </div>
+      </div>
+      <nav aria-label="Navigimi kryesor">
+        <button id="openSignupBtn" type="button">Signup</button>
+        <a href="#anetaresia">Anëtarët</a>
+        <a href="#orari">Orari</a>
+        <a href="#shop">Store</a>
+        <a href="#games">Lojërat</a>
+        <a href="#biseda">Biseda</a>
+        <button id="openCreatorBtn" type="button">Krijuesi</button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="card hero-main">
+        <div>
+          <div class="eyebrow">Faqe e klasës me backend të përbashkët</div>
+          <h1>Signup, chat, money, shop, dhe duel 1v1 që i shohin të gjithë.</h1>
+          <p class="lead">
+            Kjo version ruan profilet në server, jo vetëm në browser. Kur dikush regjistrohet, profili i tij
+            shfaqet në anëtarët për të gjithë. Lojërat, paratë, dhe historia ruhen po ashtu në mënyrë të përbashkët.
+          </p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="heroSignupBtn" type="button">Hap signup</button>
+          <button class="btn btn-secondary" id="refreshBtn" type="button">Rifresko</button>
+          <button class="btn btn-danger" id="resetLocalBtn" type="button">Fshi profilin tim</button>
+        </div>
+      </div>
+
+      <aside class="card hero-side">
+        <div class="info-box">
+          <h3 class="info-title">Profili yt</h3>
+          <p class="info-value" id="meInfo">Nuk ka profil të ruajtur</p>
+        </div>
+        <div class="info-box">
+          <h3 class="info-title">Gjendja e krijuesit</h3>
+          <p class="info-value" id="creatorInfo">I çaktivizuar</p>
+        </div>
+        <div class="info-box">
+          <h3 class="info-title">Statusi</h3>
+          <p class="info-value" id="statusInfo">Duke ngarkuar...</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <main>
+    <div class="container">
+      <section class="card section" id="anetaresia">
+        <div class="section-head">
+          <div>
+            <h2>Anëtarët e klasës</h2>
+            <p class="section-lead">
+              Profili që regjistron veten shfaqet këtu për të gjithë. Krijuesi mund të ndryshojë emra, nofka, dhe role.
+            </p>
+          </div>
+          <span class="badge" id="memberBadge">0 anëtarë</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong id="countProfiles">0</strong><span>Profile</span></div>
+          <div class="stat"><strong id="countMoney">0</strong><span>Para totale</span></div>
+          <div class="stat"><strong id="countChat">0</strong><span>Mesazhe</span></div>
+          <div class="stat"><strong id="countDuels">0</strong><span>Duele</span></div>
+        </div>
+
+        <div style="height:18px"></div>
+        <div id="yourProfileSlot" class="mini-card hidden" style="margin-bottom:14px;"></div>
+        <div class="roster" id="roster"></div>
+      </section>
+
+      <section class="card section" id="orari">
+        <div class="section-head">
+          <div>
+            <h2>Orari i javës</h2>
+            <p class="section-lead">5 ditë, dhe vetëm krijuesi mund ta ndryshojë.</p>
+          </div>
+          <span class="badge" id="creatorEditBadge">Editimi: i mbyllur</span>
+        </div>
+        <div class="grid-3" id="scheduleGrid"></div>
+      </section>
+
+      <section class="card section" id="shop">
+        <div class="section-head">
+          <div>
+            <h2>Betting shop</h2>
+            <p class="section-lead">Bli pajisje me bucks. Disa japin fat, disa të mbrojnë, disa të japin bonus.</p>
+          </div>
+          <span class="badge" id="shopBadge">Dyqani është aktiv</span>
+        </div>
+        <div class="grid-3" id="shopGrid"></div>
+      </section>
+
+      <section class="card section" id="games">
+        <div class="section-head">
+          <div>
+            <h2>Lojërat</h2>
+            <p class="section-lead">Bet në një lojë, ose bëj duel 1v1 me një nxënës tjetër ose me profilin tënd lokal.</p>
+          </div>
+          <span class="badge" id="gameBadge">Gati për lojë</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="mini-card">
+            <h3>Bëj bet</h3>
+            <div class="composer">
+              <div class="field">
+                <label for="betPlayer">Lojtari</label>
+                <select id="betPlayer"></select>
+              </div>
+              <div class="field">
+                <label for="betAmount">Shuma</label>
+                <input id="betAmount" type="number" min="1" step="1" value="10" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="betDiceBtn" type="button">Zari</button>
+                <button class="btn btn-secondary" id="betCoinBtn" type="button">Monedha</button>
+              </div>
+            </div>
+            <p id="betResult" class="note" style="margin-top:12px;">Rezultati shfaqet këtu.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>1v1 duel</h3>
+            <div class="composer">
+              <div class="field">
+                <label for="duelA">Lojtari 1</label>
+                <select id="duelA"></select>
+              </div>
+              <div class="field">
+                <label for="duelB">Lojtari 2</label>
+                <select id="duelB"></select>
+              </div>
+              <div class="field">
+                <label for="duelStake">Beti</label>
+                <input id="duelStake" type="number" min="1" step="1" value="10" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="startDuelBtn" type="button">Fillo duel</button>
+              </div>
+            </div>
+            <p id="duelResult" class="note" style="margin-top:12px;">Dueli shfaqet këtu.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card section" id="leaderboard">
+        <div class="section-head">
+          <div>
+            <h2>Leaderboard i parave</h2>
+            <p class="section-lead">1 pikë = 5 bucks. Këtu shfaqet kush është më i pasuri në klasë.</p>
+          </div>
+          <span class="badge" id="moneyTotalBadge">Totali: 0$</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Emri</th>
+                <th>Roli</th>
+                <th>Pikë</th>
+                <th>Para</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card section" id="history">
+        <div class="section-head">
+          <div>
+            <h2>Historia e dueleve</h2>
+            <p class="section-lead">Të gjitha duel-et 1v1 ruhen dhe mund t’i shohësh këtu.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Koha</th>
+                <th>Lojtari 1</th>
+                <th>Lojtari 2</th>
+                <th>Fituesi</th>
+                <th>Beti</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card section" id="biseda">
+        <div class="section-head">
+          <div>
+            <h2>Biseda e klasës</h2>
+            <p class="section-lead">Mesazhet dhe fotot ruhen në backend dhe shfaqen për të gjithë.</p>
+          </div>
+          <span class="badge">Chat i përbashkët</span>
+        </div>
+        <div class="panel">
+          <div id="chatFeed" class="feed" aria-live="polite"></div>
+          <div class="card" style="padding:18px; background: rgba(255,255,255,.7); border-radius:18px;">
+            <div class="composer">
+              <div class="note" id="chatHint">Hape signup-in që të përdorësh emrin tënd në chat.</div>
+              <div class="field">
+                <label for="chatMessage">Mesazhi</label>
+                <textarea id="chatMessage" placeholder="Shkruaj diçka për klasën..."></textarea>
+              </div>
+              <div class="field">
+                <label for="chatImage">Foto</label>
+                <input id="chatImage" type="file" accept="image/*" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="sendChatBtn" type="button">Dërgo</button>
+                <button class="btn btn-secondary" id="clearChatBtn" type="button">Pastro chat-in</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card section hidden" id="creatorPanel">
+        <div class="section-head">
+          <div>
+            <h2>Paneli i krijuesit</h2>
+            <p class="section-lead">Ky panel shfaqet vetëm pasi të hysh me kodin e krijuesit.</p>
+          </div>
+          <span class="badge" id="creatorPanelBadge">Krijuesi: jo aktiv</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="mini-card">
+            <h3>Hyrja</h3>
+            <div class="composer">
+              <div class="field">
+                <label for="creatorCode">Kodi</label>
+                <input id="creatorCode" type="password" autocomplete="off" placeholder="Shkruaj kodin" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="creatorLoginBtn" type="button">Hyr</button>
+                <button class="btn btn-secondary" id="creatorLogoutBtn" type="button">Dil</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <h3>Ndrysho profilin</h3>
+            <div class="composer">
+              <div class="field">
+                <label for="studentSelect">Anëtari</label>
+                <select id="studentSelect"></select>
+              </div>
+              <div class="field">
+                <label for="editFirstName">Emri</label>
+                <input id="editFirstName" type="text" />
+              </div>
+              <div class="field">
+                <label for="editLastName">Mbiemri</label>
+                <input id="editLastName" type="text" />
+              </div>
+              <div class="field">
+                <label for="editNickname">Nofka</label>
+                <input id="editNickname" type="text" />
+              </div>
+              <div class="field">
+                <label for="editRole">Roli</label>
+                <input id="editRole" type="text" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="saveStudentBtn" type="button">Ruaj</button>
+                <button class="btn btn-danger" id="deleteStudentBtn" type="button">Fshi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:18px"></div>
+        <div class="mini-card">
+          <h3>Orari publik</h3>
+          <div class="grid-3">
+            <div class="field"><label for="mondayInput">E hënë</label><input id="mondayInput" type="text"></div>
+            <div class="field"><label for="tuesdayInput">E martë</label><input id="tuesdayInput" type="text"></div>
+            <div class="field"><label for="wednesdayInput">E mërkurë</label><input id="wednesdayInput" type="text"></div>
+            <div class="field"><label for="thursdayInput">E enjte</label><input id="thursdayInput" type="text"></div>
+            <div class="field"><label for="fridayInput">E premte</label><input id="fridayInput" type="text"></div>
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn btn-primary" id="saveScheduleBtn" type="button">Ruaj orarin</button>
+          </div>
+        </div>
+
+        <div style="height:18px"></div>
+        <div class="mini-card">
+          <h3>Shëno pikë</h3>
+          <p class="note" style="margin-bottom:12px;">Çdo shënim i pikës jep edhe 5 bucks.</p>
+          <div class="student-actions">
+            <button class="btn btn-secondary" data-point="class" type="button">+ Klasë</button>
+            <button class="btn btn-secondary" data-point="homework" type="button">+ Detyrë</button>
+            <button class="btn btn-secondary" data-point="project" type="button">+ Projekt</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="footer">
+    <!-- Koment në shqip: faqja është vetëm frontend; backend-i e bën të përbashkët -->
+    <p>© 2026 Klasa 10B. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
+  </div>
+
+  <div class="modal-backdrop" id="signupModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h2>Signup</h2>
+          <p class="section-lead" style="margin:0;">Krijo ose përditëso profilin tënd të përbashkët.</p>
+        </div>
+        <button class="btn btn-secondary" id="closeSignupBtn" type="button">Mbyll</button>
+      </div>
+      <form id="signupForm" class="composer">
+        <div class="grid-2">
+          <div class="field"><label for="firstName">Emri</label><input id="firstName" required></div>
+          <div class="field"><label for="lastName">Mbiemri</label><input id="lastName" required></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="nickname">Nofka</label><input id="nickname" placeholder="p.sh. Ardi i shpejtë"></div>
+          <div class="field"><label for="profileRole">Roli</label><input id="profileRole" placeholder="Student"></div>
+        </div>
+        <div class="actions" style="margin-top:0;">
+          <button class="btn btn-primary" type="submit">Ruaj profilin</button>
+          <button class="btn btn-secondary" id="clearProfileBtn" type="button">Fshi profilin lokal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="creatorModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h2>Hyrja e krijuesit</h2>
+          <p class="section-lead" style="margin:0;">Paneli admin del vetëm kur kodi është i saktë.</p>
+        </div>
+        <button class="btn btn-secondary" id="closeCreatorBtn" type="button">Mbyll</button>
+      </div>
+      <div class="composer">
+        <div class="field"><label for="creatorCodeModal">Kodi</label><input id="creatorCodeModal" type="password" autocomplete="off"></div>
+        <div class="actions" style="margin-top:0;">
+          <button class="btn btn-primary" id="creatorLoginModalBtn" type="button">Hyr</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = location.origin;
+    const STORAGE = {
+      clientId: "klasa-client-id",
+      creatorToken: "klasa-creator-token",
+    };
+
+    const $ = (s) => document.querySelector(s);
+    const state = {
+      me: null,
+      profiles: [],
+      schedule: {},
+      chat: [],
+      shop: [],
+      history: [],
+      creatorActive: false,
+      lastGameMessage: "",
+      lastDuelMessage: ""
+    };
+
+    function uid() {
+      return (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    }
+
+    function getClientId() {
+      let id = localStorage.getItem(STORAGE.clientId);
+      if (!id) {
+        id = uid();
+        localStorage.setItem(STORAGE.clientId, id);
+      }
+      return id;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+    }
+
+    function moneyFor(profile) {
+      return Number(profile.money || 0);
+    }
+
+    function pointsFor(profile) {
+      return Number(profile.points || 0);
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Client-Id": getClientId(),
+          ...(options.headers || {})
+        },
+        ...options,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    function openModal(el) { el.classList.add("open"); }
+    function closeModal(el) { el.classList.remove("open"); }
+
+    function currentMe() {
+      return state.profiles.find((p) => p.id === getClientId()) || state.me;
+    }
+
+    function profileDisplay(profile) {
+      if (!profile) return "Nuk ka profil të ruajtur";
+      const full = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
+      return profile.nickname ? `${full} (${profile.nickname})` : full;
+    }
+
+    function rosterProfiles() {
+      const me = currentMe();
+      const others = state.profiles.filter((p) => p.id !== getClientId());
+      return me ? [me, ...others] : others;
+    }
+
+    function rosterMoneyPlayers() {
+      return rosterProfiles().map((p) => ({
+        id: p.id,
+        name: profileDisplay(p),
+        role: p.role || "Student",
+        money: moneyFor(p),
+        points: pointsFor(p),
+        isMe: p.id === getClientId()
+      }));
+    }
+
+    function setBubble(el, type) {
+      el.classList.remove("animate-pop", "animate-win", "animate-loss");
+      void el.offsetWidth;
+      el.classList.add("animate-pop");
+      if (type === "win") el.classList.add("animate-win");
+      if (type === "loss") el.classList.add("animate-loss");
+    }
+
+    function render() {
+      const me = currentMe();
+      $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
+      $("#creatorInfo").textContent = state.creatorActive ? "Aktiv" : "I çaktivizuar";
+      $("#creatorEditBadge").textContent = state.creatorActive ? "Editimi: i hapur" : "Editimi: i mbyllur";
+      $("#creatorPanelBadge").textContent = state.creatorActive ? "Krijuesi: aktiv" : "Krijuesi: jo aktiv";
+      $("#creatorPanel").classList.toggle("hidden", !state.creatorActive);
+      $("#statusInfo").textContent = state.profiles.length ? "Online" : "Duke pritur profile";
+      $("#memberBadge").textContent = `${state.profiles.length} anëtarë`;
+      $("#countProfiles").textContent = state.profiles.length;
+      $("#countMoney").textContent = state.profiles.reduce((sum, p) => sum + moneyFor(p), 0);
+      $("#countChat").textContent = state.chat.length;
+      $("#countDuels").textContent = state.history.length;
+      $("#moneyTotalBadge").textContent = `Totali: ${state.profiles.reduce((sum, p) => sum + moneyFor(p), 0)}$`;
+      $("#shopBadge").textContent = `Të dhëna: ${state.shop.length} artikuj`;
+      $("#gameBadge").textContent = me ? "Gati për lojë" : "Hap signup për të luajtur";
+      $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Hape signup-in që të përdorësh emrin tënd në chat.";
+
+      const yourSlot = $("#yourProfileSlot");
+      if (me) {
+        yourSlot.classList.remove("hidden");
+        yourSlot.innerHTML = `
+          <h3>Profili yt i përbashkët</h3>
+          <p>${escapeHtml(profileDisplay(me))}</p>
+          <div class="chips" style="margin-top:10px;">
+            <span class="chip good">${moneyFor(me)}$</span>
+            <span class="chip neutral">${escapeHtml(me.role || "Student")}</span>
+            <span class="chip neutral">${pointsFor(me)} pikë</span>
+          </div>
+        `;
+      } else {
+        yourSlot.classList.add("hidden");
+        yourSlot.innerHTML = "";
+      }
+
+      $("#roster").innerHTML = rosterProfiles().map((p) => {
+        const meMark = p.id === getClientId() ? "Profili yt" : "Anëtar";
+        return `
+          <article class="student-card">
+            <div class="student-top">
+              <div>
+                <p class="student-name">${escapeHtml(profileDisplay(p))}</p>
+                <div class="student-meta">Roli: <strong>${escapeHtml(p.role || "Student")}</strong></div>
+                <div class="student-meta">Nofka: <strong>${escapeHtml(p.nickname || "-")}</strong></div>
+              </div>
+              <div class="chips">
+                <span class="chip good">${moneyFor(p)}$</span>
+                <span class="chip neutral">${pointsFor(p)} pikë</span>
+                <span class="chip neutral">${escapeHtml(meMark)}</span>
+              </div>
+            </div>
+            ${state.creatorActive ? `
+              <div class="student-actions">
+                <button class="btn btn-secondary" data-admin-point="class" data-id="${p.id}" type="button">+ Klasë</button>
+                <button class="btn btn-secondary" data-admin-point="homework" data-id="${p.id}" type="button">+ Detyrë</button>
+                <button class="btn btn-secondary" data-admin-point="project" data-id="${p.id}" type="button">+ Projekt</button>
+                <button class="btn btn-danger" data-admin-delete="${p.id}" type="button">Fshi</button>
+              </div>
+            ` : ""}
+          </article>
+        `;
+      }).join("");
+
+      $("#scheduleGrid").innerHTML = ["monday", "tuesday", "wednesday", "thursday", "friday"].map((day) => `
+        <div class="mini-card">
+          <h3>${{ monday: "E hënë", tuesday: "E martë", wednesday: "E mërkurë", thursday: "E enjte", friday: "E premte" }[day]}</h3>
+          <p>${escapeHtml(state.schedule[day] || "-")}</p>
+        </div>
+      `).join("");
+
+      $("#shopGrid").innerHTML = state.shop.map((item) => `
+        <article class="mini-card">
+          <h3>${escapeHtml(item.name)}</h3>
+          <p>${escapeHtml(item.description)}</p>
+          <div style="height:10px;"></div>
+          <div class="chips">
+            <span class="chip good">${item.price}$</span>
+            <span class="chip neutral">${escapeHtml(item.effectLabel)}</span>
+          </div>
+          <div style="height:12px;"></div>
+          <button class="btn btn-primary" data-buy="${item.id}" type="button">Bli</button>
+        </article>
+      `).join("");
+
+      const players = rosterMoneyPlayers();
+      const options = players.map((p) => `<option value="${p.id}">${escapeHtml(p.name)} - ${p.money}$</option>`).join("");
+      $("#betPlayer").innerHTML = options;
+      $("#duelA").innerHTML = options;
+      $("#duelB").innerHTML = options;
+      if (players[0]) {
+        $("#betPlayer").value = players[0].id;
+        $("#duelA").value = players[0].id;
+      }
+      if (players[1]) $("#duelB").value = players[1].id;
+      else if (players[0]) $("#duelB").value = players[0].id;
+
+      $("#leaderboardBody").innerHTML = players
+        .sort((a, b) => b.money - a.money || b.points - a.points || a.name.localeCompare(b.name))
+        .map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(p.name)}${p.isMe ? " (Ti)" : ""}</td>
+            <td>${escapeHtml(p.role)}</td>
+            <td>${p.points}</td>
+            <td>${p.money}$</td>
+          </tr>
+        `).join("");
+
+      $("#historyBody").innerHTML = state.history.slice().reverse().map((h) => `
+        <tr>
+          <td>${new Date(h.createdAt).toLocaleString("sq-AL")}</td>
+          <td>${escapeHtml(h.leftName)}</td>
+          <td>${escapeHtml(h.rightName)}</td>
+          <td>${escapeHtml(h.winnerName)}</td>
+          <td>${h.amount}$</td>
+        </tr>
+      `).join("");
+
+      $("#chatFeed").innerHTML = state.chat.slice().reverse().map((m) => {
+        if (m.type === "system") {
+          return `<div class="message system"><div>${escapeHtml(m.text)}</div></div>`;
+        }
+        const self = me && m.author === profileDisplay(me);
+        const imageHtml = m.image ? `<img src="${m.image}" alt="Foto" />` : "";
+        return `
+          <div class="message ${self ? "self" : ""}">
+            <div class="message-head">
+              <strong>${escapeHtml(m.author)}</strong>
+              <span>${new Date(m.createdAt).toLocaleTimeString("sq-AL", { hour: "2-digit", minute: "2-digit" })}</span>
+            </div>
+            <div>${escapeHtml(m.text || "")}</div>
+            ${imageHtml}
+          </div>
+        `;
+      }).join("");
+
+      $("#studentSelect").innerHTML = rosterProfiles().map((p) => `<option value="${p.id}">${escapeHtml(profileDisplay(p))}</option>`).join("");
+      const selected = rosterProfiles()[0];
+      if (selected) {
+        $("#studentSelect").value = selected.id;
+        $("#editFirstName").value = selected.firstName || "";
+        $("#editLastName").value = selected.lastName || "";
+        $("#editNickname").value = selected.nickname || "";
+        $("#editRole").value = selected.role || "";
+      }
+
+      $("#mondayInput").value = state.schedule.monday || "";
+      $("#tuesdayInput").value = state.schedule.tuesday || "";
+      $("#wednesdayInput").value = state.schedule.wednesday || "";
+      $("#thursdayInput").value = state.schedule.thursday || "";
+      $("#fridayInput").value = state.schedule.friday || "";
+    }
+
+    async function loadState() {
+      $("#statusInfo").textContent = "Duke ngarkuar nga serveri...";
+      const data = await api("/api/state", { headers: tokenHeaders() });
+      state.me = data.me;
+      state.profiles = data.profiles || [];
+      state.schedule = data.schedule || {};
+      state.chat = data.chat || [];
+      state.shop = data.shop || [];
+      state.history = data.history || [];
+      state.creatorActive = data.creatorActive || false;
+      render();
+      $("#statusInfo").textContent = "Online";
+    }
+
+    async function createOrUpdateProfile() {
+      const payload = {
+        clientId: getClientId(),
+        firstName: $("#firstName").value.trim(),
+        lastName: $("#lastName").value.trim(),
+        nickname: $("#nickname").value.trim(),
+        role: $("#profileRole").value.trim() || "Student"
+      };
+      const saved = await api("/api/profile", { method: "POST", body: JSON.stringify(payload) });
+      state.me = saved.profile;
+      closeModal($("#signupModal"));
+      await loadState();
+    }
+
+    async function creatorLogin() {
+      const code = ($("#creatorCode").value.trim() || $("#creatorCodeModal").value.trim());
+      const result = await api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: code }) });
+      localStorage.setItem(STORAGE.creatorToken, result.token);
+      closeModal($("#creatorModal"));
+      await loadState();
+    }
+
+    async function creatorLogout() {
+      localStorage.removeItem(STORAGE.creatorToken);
+      await loadState();
+    }
+
+    function tokenHeaders() {
+      const token = localStorage.getItem(STORAGE.creatorToken);
+      return token ? { "X-Creator-Token": token } : {};
+    }
+
+    async function adminPoint(kind, id) {
+      await api("/api/admin/point", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({ id, kind }) });
+      await loadState();
+    }
+
+    async function adminDelete(id) {
+      await api("/api/admin/delete", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({ id }) });
+      await loadState();
+    }
+
+    async function saveSchedule() {
+      await api("/api/admin/schedule", {
+        method: "POST",
+        headers: tokenHeaders(),
+        body: JSON.stringify({
+          monday: $("#mondayInput").value.trim(),
+          tuesday: $("#tuesdayInput").value.trim(),
+          wednesday: $("#wednesdayInput").value.trim(),
+          thursday: $("#thursdayInput").value.trim(),
+          friday: $("#fridayInput").value.trim()
+        })
+      });
+      await loadState();
+    }
+
+    async function saveStudent() {
+      const id = $("#studentSelect").value;
+      await api("/api/admin/student", {
+        method: "POST",
+        headers: tokenHeaders(),
+        body: JSON.stringify({
+          id,
+          firstName: $("#editFirstName").value.trim(),
+          lastName: $("#editLastName").value.trim(),
+          nickname: $("#editNickname").value.trim(),
+          role: $("#editRole").value.trim()
+        })
+      });
+      await loadState();
+    }
+
+    async function deleteStudent() {
+      const id = $("#studentSelect").value;
+      await adminDelete(id);
+    }
+
+    async function sendChat() {
+      const me = state.me;
+      if (!me) {
+        openModal($("#signupModal"));
+        return;
+      }
+      const imageFile = $("#chatImage").files?.[0];
+      let image = "";
+      if (imageFile) {
+        image = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.readAsDataURL(imageFile);
+        });
+      }
+      await api("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: getClientId(),
+          text: $("#chatMessage").value.trim(),
+          image
+        })
+      });
+      $("#chatMessage").value = "";
+      $("#chatImage").value = "";
+      await loadState();
+    }
+
+    async function buyItem(id) {
+      await api("/api/shop/buy", { method: "POST", body: JSON.stringify({ clientId: getClientId(), itemId: id }) });
+      await loadState();
+    }
+
+    async function playBet(mode) {
+      const playerId = $("#betPlayer").value;
+      const amount = Number($("#betAmount").value || 0);
+      const result = await api("/api/game/bet", { method: "POST", body: JSON.stringify({ clientId: getClientId(), playerId, amount, mode }) });
+      $("#betResult").textContent = result.message;
+      setBubble($("#betResult"), result.won ? "win" : "loss");
+      await loadState();
+    }
+
+    async function startDuel() {
+      const result = await api("/api/game/duel", {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: getClientId(),
+          leftId: $("#duelA").value,
+          rightId: $("#duelB").value,
+          amount: Number($("#duelStake").value || 0)
+        })
+      });
+      $("#duelResult").textContent = result.message;
+      setBubble($("#duelResult"), result.won ? "win" : "loss");
+      await loadState();
+    }
+
+    $("#openSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
+    $("#heroSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
+    $("#openCreatorBtn").addEventListener("click", () => openModal($("#creatorModal")));
+    $("#closeSignupBtn").addEventListener("click", () => closeModal($("#signupModal")));
+    $("#closeCreatorBtn").addEventListener("click", () => closeModal($("#creatorModal")));
+    $("#signupModal").addEventListener("click", (e) => { if (e.target === $("#signupModal")) closeModal($("#signupModal")); });
+    $("#creatorModal").addEventListener("click", (e) => { if (e.target === $("#creatorModal")) closeModal($("#creatorModal")); });
+    $("#signupForm").addEventListener("submit", (e) => { e.preventDefault(); createOrUpdateProfile().catch(alert); });
+    $("#clearProfileBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE.clientId); location.reload(); });
+    $("#creatorLoginBtn").addEventListener("click", () => creatorLogin().catch((err) => alert(err.message)));
+    $("#creatorLoginModalBtn").addEventListener("click", () => creatorLogin().catch((err) => alert(err.message)));
+    $("#creatorLogoutBtn").addEventListener("click", () => creatorLogout().catch((err) => alert(err.message)));
+    $("#refreshBtn").addEventListener("click", () => loadState().catch((err) => $("#statusInfo").textContent = err.message));
+    $("#resetLocalBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE.clientId); location.reload(); });
+    $("#sendChatBtn").addEventListener("click", () => sendChat().catch(alert));
+    $("#clearChatBtn").addEventListener("click", async () => { await api("/api/chat/clear", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({}) }); await loadState(); });
+    $("#betDiceBtn").addEventListener("click", () => playBet("dice").catch(alert));
+    $("#betCoinBtn").addEventListener("click", () => playBet("coin").catch(alert));
+    $("#startDuelBtn").addEventListener("click", () => startDuel().catch(alert));
+    $("#saveScheduleBtn").addEventListener("click", () => saveSchedule().catch(alert));
+    $("#saveStudentBtn").addEventListener("click", () => saveStudent().catch(alert));
+    $("#deleteStudentBtn").addEventListener("click", () => deleteStudent().catch(alert));
+    $("#studentSelect").addEventListener("change", render);
+
+    $("#roster").addEventListener("click", async (event) => {
+      const pointBtn = event.target.closest("[data-admin-point]");
+      const deleteBtn = event.target.closest("[data-admin-delete]");
+      const buyBtn = event.target.closest("[data-buy]");
+      if (pointBtn) return adminPoint(pointBtn.dataset.adminPoint, pointBtn.dataset.id).catch(alert);
+      if (deleteBtn) return adminDelete(deleteBtn.dataset.adminDelete).catch(alert);
+      if (buyBtn) return buyItem(buyBtn.dataset.buy).catch(alert);
+    });
+    $("#shopGrid").addEventListener("click", (event) => {
+      const buyBtn = event.target.closest("[data-buy]");
+      if (buyBtn) buyItem(buyBtn.dataset.buy).catch(alert);
+    });
+
+    const poll = async () => {
+      try { await loadState(); } catch (err) { $("#statusInfo").textContent = err.message; }
+    };
+
+    if (!localStorage.getItem(STORAGE.clientId)) localStorage.setItem(STORAGE.clientId, uid());
+    poll();
+    if (!currentMe()) openModal($("#signupModal"));
+    setInterval(poll, 3000);
+  </script>
+</body>
+</html>
