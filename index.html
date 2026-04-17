@@ -675,6 +675,10 @@
       $("#shopBadge").textContent = `Të dhëna: ${state.shop.length} artikuj`;
       $("#gameBadge").textContent = me ? "Gati për lojë" : "Hap signup për të luajtur";
       $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Hape signup-in që të përdorësh emrin tënd në chat.";
+      $("#chatMessage").disabled = !me;
+      $("#chatImage").disabled = !me;
+      $("#sendChatBtn").disabled = !me;
+      $("#sendChatBtn").textContent = me ? "Dërgo" : "Hap signup";
 
       const yourSlot = $("#yourProfileSlot");
       if (me) {
@@ -904,9 +908,10 @@
     }
 
     async function sendChat() {
-      const me = state.me;
+      const me = currentMe();
       if (!me) {
-        openModal($("#signupModal"));
+        if (!$("#signupModal").classList.contains("open")) openModal($("#signupModal"));
+        $("#firstName").focus();
         return;
       }
       const imageFile = $("#chatImage").files?.[0];
