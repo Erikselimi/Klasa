@@ -177,6 +177,31 @@
     .modal-head h2 { margin:0 0 6px; font-family: Georgia, "Times New Roman", serif; }
     .panel { display:grid; gap:14px; }
     .footer { padding:0 0 28px; text-align:center; color: var(--muted); }
+    .accordion-stack { display:grid; gap:14px; }
+    .game-accordion {
+      border:1px solid var(--border);
+      border-radius:20px;
+      background: rgba(255,255,255,.82);
+      overflow:hidden;
+      box-shadow: 0 10px 22px rgba(18,33,43,.04);
+    }
+    .game-accordion[open] { background: rgba(255,255,255,.96); }
+    .game-summary {
+      list-style:none;
+      cursor:pointer;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      padding:18px 20px;
+      font-weight:900;
+      color:var(--text);
+    }
+    .game-summary::-webkit-details-marker { display:none; }
+    .game-summary span { color: var(--muted); font-weight:700; }
+    .game-panel {
+      padding: 0 20px 20px;
+    }
 
     .game-shell {
       display:grid;
@@ -370,150 +395,164 @@
           </div>
           <span class="badge" id="gameBadge">Gati për lojë</span>
         </div>
-
-        <div class="grid-2">
-          <div class="mini-card">
-            <h3>Bëj bet</h3>
-            <div class="composer">
-              <div class="field">
-                <label for="betPlayer">Lojtari</label>
-                <select id="betPlayer"></select>
-              </div>
-              <div class="field">
-                <label for="betAmount">Shuma</label>
-                <input id="betAmount" type="number" min="1" step="1" value="10" />
-              </div>
-              <div class="actions" style="margin-top:0;">
-                <button class="btn btn-primary" id="betDiceBtn" type="button">Zari</button>
-                <button class="btn btn-secondary" id="betCoinBtn" type="button">Monedha</button>
-              </div>
-            </div>
-            <p id="betResult" class="note" style="margin-top:12px;">Rezultati shfaqet këtu.</p>
-          </div>
-
-          <div class="mini-card">
-            <h3>1v1 duel</h3>
-            <div class="composer">
-              <div class="field">
-                <label for="duelA">Lojtari 1</label>
-                <select id="duelA"></select>
-              </div>
-              <div class="field">
-                <label for="duelB">Lojtari 2</label>
-                <select id="duelB"></select>
-              </div>
-              <div class="field">
-                <label for="duelStake">Beti</label>
-                <input id="duelStake" type="number" min="1" step="1" value="10" />
-              </div>
-              <div class="actions" style="margin-top:0;">
-                <button class="btn btn-primary" id="startDuelBtn" type="button">Fillo duel</button>
-              </div>
-            </div>
-            <p id="duelResult" class="note" style="margin-top:12px;">Dueli shfaqet këtu.</p>
-          </div>
-        </div>
-
-        <div class="game-shell">
-          <div class="mini-card soft">
-            <h3>Match online</h3>
-            <p>Shiko kush është në radhë dhe futu për të gjetur një kundërshtar.</p>
-            <div class="composer" style="margin-top:14px;">
-              <div class="field">
-                <label for="matchStake">Beti</label>
-                <input id="matchStake" type="number" min="1" step="1" value="10" />
-              </div>
-              <div class="actions" style="margin-top:0;">
-                <button class="btn btn-primary" id="joinMatchBtn" type="button">Kërko match</button>
-                <button class="btn btn-secondary" id="leaveMatchBtn" type="button">Dil nga radha</button>
-              </div>
-              <div class="status-strip" id="matchState">Askush nuk është në radhë.</div>
-              <div class="table-wrap">
-                <table style="min-width:100%;">
-                  <thead>
-                    <tr>
-                      <th>Lojtari</th>
-                      <th>Beti</th>
-                    </tr>
-                  </thead>
-                  <tbody id="matchQueueBody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="game-grid">
-            <div class="mini-card soft">
-              <h3>Monedha reale</h3>
-              <p>Zgjidh anën, shëno shumën dhe hidhe me animacion.</p>
-              <div class="composer" style="margin-top:14px;">
-                <div class="field">
-                  <label for="coinPlayer">Lojtari</label>
-                  <select id="coinPlayer"></select>
-                </div>
-                <div class="field">
-                  <label for="coinAmount">Shuma</label>
-                  <input id="coinAmount" type="number" min="1" step="1" value="10" />
-                </div>
-                <div class="pill-row">
-                  <button class="pill active" id="guessHeadsBtn" type="button">Kokë</button>
-                  <button class="pill" id="guessTailsBtn" type="button">Bisht</button>
-                </div>
-                <div class="coin-wrap">
-                  <img id="coinImage" class="coin" src="heads.png" alt="Monedhë" />
-                </div>
-                <div class="status-strip" id="coinBadge">Po pret zgjedhjen.</div>
-                <div class="actions" style="margin-top:0;">
-                  <button class="btn btn-primary" id="flipCoinBtn" type="button">Hidhe monedhën</button>
-                </div>
-              </div>
-              <p id="coinResult" class="note" style="margin-top:12px;">Rezultati i monedhës shfaqet këtu.</p>
-            </div>
-
-            <div class="mini-card soft">
-              <h3>Rock Paper Scissors</h3>
-              <p>Një mini-lojë tjetër 1v1 me zgjedhje dhe fitues të qartë.</p>
-              <div class="composer" style="margin-top:14px;">
-                <div class="grid-2">
+        <div class="accordion-stack">
+          <details class="game-accordion" open>
+            <summary class="game-summary">Bëj bet <span>Zari ose monedha për një lojtar</span></summary>
+            <div class="game-panel">
+              <div class="mini-card soft" style="margin-top:0;">
+                <div class="composer">
                   <div class="field">
-                    <label for="rpsA">Lojtari 1</label>
-                    <select id="rpsA"></select>
+                    <label for="betPlayer">Lojtari</label>
+                    <select id="betPlayer"></select>
                   </div>
                   <div class="field">
-                    <label for="rpsB">Lojtari 2</label>
-                    <select id="rpsB"></select>
+                    <label for="betAmount">Shuma</label>
+                    <input id="betAmount" type="number" min="1" step="1" value="10" />
+                  </div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn btn-primary" id="betDiceBtn" type="button">Zari</button>
+                    <button class="btn btn-secondary" id="betCoinBtn" type="button">Monedha</button>
                   </div>
                 </div>
-                <div class="grid-2">
+                <p id="betResult" class="note" style="margin-top:12px;">Rezultati shfaqet këtu.</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="game-accordion">
+            <summary class="game-summary">1v1 duel <span>Dy lojtarë, një bet, një fitues</span></summary>
+            <div class="game-panel">
+              <div class="mini-card soft">
+                <div class="composer">
                   <div class="field">
-                    <label for="rpsMoveA">Zgjedhja 1</label>
-                    <select id="rpsMoveA">
-                      <option value="rock">Gur</option>
-                      <option value="paper">Letër</option>
-                      <option value="scissors">Gërshërë</option>
-                    </select>
+                    <label for="duelA">Lojtari 1</label>
+                    <select id="duelA"></select>
                   </div>
                   <div class="field">
-                    <label for="rpsMoveB">Zgjedhja 2</label>
-                    <select id="rpsMoveB">
-                      <option value="rock">Gur</option>
-                      <option value="paper">Letër</option>
-                      <option value="scissors">Gërshërë</option>
-                    </select>
+                    <label for="duelB">Lojtari 2</label>
+                    <select id="duelB"></select>
+                  </div>
+                  <div class="field">
+                    <label for="duelStake">Beti</label>
+                    <input id="duelStake" type="number" min="1" step="1" value="10" />
+                  </div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn btn-primary" id="startDuelBtn" type="button">Fillo duel</button>
                   </div>
                 </div>
-                <div class="field">
-                  <label for="rpsStake">Beti</label>
-                  <input id="rpsStake" type="number" min="1" step="1" value="10" />
-                </div>
-                <div class="actions" style="margin-top:0;">
-                  <button class="btn btn-primary" id="startRpsBtn" type="button">Luaj RPS</button>
+                <p id="duelResult" class="note" style="margin-top:12px;">Dueli shfaqet këtu.</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="game-accordion">
+            <summary class="game-summary">Match online <span>Lojtarët në radhë për t'u përputhur</span></summary>
+            <div class="game-panel">
+              <div class="mini-card soft">
+                <p>Shiko kush është në radhë dhe futu për të gjetur një kundërshtar.</p>
+                <div class="composer" style="margin-top:14px;">
+                  <div class="field">
+                    <label for="matchStake">Beti</label>
+                    <input id="matchStake" type="number" min="1" step="1" value="10" />
+                  </div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn btn-primary" id="joinMatchBtn" type="button">Kërko match</button>
+                    <button class="btn btn-secondary" id="leaveMatchBtn" type="button">Dil nga radha</button>
+                  </div>
+                  <div class="status-strip" id="matchState">Askush nuk është në radhë.</div>
+                  <div class="table-wrap">
+                    <table style="min-width:100%;">
+                      <thead>
+                        <tr>
+                          <th>Lojtari</th>
+                          <th>Beti</th>
+                        </tr>
+                      </thead>
+                      <tbody id="matchQueueBody"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-              <p id="rpsStatus" class="note" style="margin-top:12px;">Zgjidh dy lojtarë dhe një bet.</p>
-              <p id="rpsResult" class="note" style="margin-top:8px;">Rezultati i RPS shfaqet këtu.</p>
             </div>
-          </div>
+          </details>
+
+          <details class="game-accordion">
+            <summary class="game-summary">Mini lojëra <span>Monedha reale dhe Rock Paper Scissors</span></summary>
+            <div class="game-panel">
+              <div class="grid-2">
+                <div class="mini-card soft">
+                  <h3>Monedha reale</h3>
+                  <p>Zgjidh anën, shëno shumën dhe hidhe me animacion.</p>
+                  <div class="composer" style="margin-top:14px;">
+                    <div class="field">
+                      <label for="coinPlayer">Lojtari</label>
+                      <select id="coinPlayer"></select>
+                    </div>
+                    <div class="field">
+                      <label for="coinAmount">Shuma</label>
+                      <input id="coinAmount" type="number" min="1" step="1" value="10" />
+                    </div>
+                    <div class="pill-row">
+                      <button class="pill active" id="guessHeadsBtn" type="button">Kokë</button>
+                      <button class="pill" id="guessTailsBtn" type="button">Bisht</button>
+                    </div>
+                    <div class="coin-wrap">
+                      <img id="coinImage" class="coin" src="heads.png" alt="Monedhë" />
+                    </div>
+                    <div class="status-strip" id="coinBadge">Po pret zgjedhjen.</div>
+                    <div class="actions" style="margin-top:0;">
+                      <button class="btn btn-primary" id="flipCoinBtn" type="button">Hidhe monedhën</button>
+                    </div>
+                  </div>
+                  <p id="coinResult" class="note" style="margin-top:12px;">Rezultati i monedhës shfaqet këtu.</p>
+                </div>
+
+                <div class="mini-card soft">
+                  <h3>Rock Paper Scissors</h3>
+                  <p>Një mini-lojë tjetër 1v1 me zgjedhje dhe fitues të qartë.</p>
+                  <div class="composer" style="margin-top:14px;">
+                    <div class="grid-2">
+                      <div class="field">
+                        <label for="rpsA">Lojtari 1</label>
+                        <select id="rpsA"></select>
+                      </div>
+                      <div class="field">
+                        <label for="rpsB">Lojtari 2</label>
+                        <select id="rpsB"></select>
+                      </div>
+                    </div>
+                    <div class="grid-2">
+                      <div class="field">
+                        <label for="rpsMoveA">Zgjedhja 1</label>
+                        <select id="rpsMoveA">
+                          <option value="rock">Gur</option>
+                          <option value="paper">Letër</option>
+                          <option value="scissors">Gërshërë</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="rpsMoveB">Zgjedhja 2</label>
+                        <select id="rpsMoveB">
+                          <option value="rock">Gur</option>
+                          <option value="paper">Letër</option>
+                          <option value="scissors">Gërshërë</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="rpsStake">Beti</label>
+                      <input id="rpsStake" type="number" min="1" step="1" value="10" />
+                    </div>
+                    <div class="actions" style="margin-top:0;">
+                      <button class="btn btn-primary" id="startRpsBtn" type="button">Luaj RPS</button>
+                    </div>
+                  </div>
+                  <p id="rpsStatus" class="note" style="margin-top:12px;">Zgjidh dy lojtarë dhe një bet.</p>
+                  <p id="rpsResult" class="note" style="margin-top:8px;">Rezultati i RPS shfaqet këtu.</p>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
       </section>
 
