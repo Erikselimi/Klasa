@@ -29,18 +29,35 @@
       color: var(--text);
       font-family: "Trebuchet MS", "Verdana", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(20, 83, 45, 0.14), transparent 28%),
-        radial-gradient(circle at top right, rgba(15, 118, 110, 0.11), transparent 26%),
-        linear-gradient(180deg, #fbfaf6 0%, var(--bg) 45%, var(--bg2) 100%);
+        radial-gradient(circle at top left, rgba(20, 83, 45, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(154, 52, 18, 0.08), transparent 22%),
+        linear-gradient(180deg, #fcfbf7 0%, var(--bg) 42%, var(--bg2) 100%);
       line-height: 1.55;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(19,33,42,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(19,33,42,.03) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.8), transparent 85%);
+      opacity: .55;
     }
     a { color: inherit; }
-    .container { width: min(1200px, calc(100% - 32px)); margin: 0 auto; }
+    .container { width: min(1280px, calc(100% - 24px)); margin: 0 auto; }
     .topbar {
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
-      margin-top: 18px; padding: 16px 20px; border-radius: 999px;
-      background: var(--surface); border: 1px solid rgba(217, 225, 219, 0.95);
-      box-shadow: var(--shadow); backdrop-filter: blur(12px);
+      margin-top: 18px; padding: 14px 18px; border-radius: 22px;
+      background: rgba(255,255,255,.88); border: 1px solid rgba(217, 225, 219, 0.98);
+      box-shadow: 0 16px 44px rgba(18, 33, 43, 0.10); backdrop-filter: blur(14px);
+      position: sticky;
+      top: 14px;
+      z-index: 40;
     }
     .brand { display:flex; align-items:center; gap:12px; font-weight:800; color:var(--primary); }
     .brand-mark {
@@ -56,15 +73,37 @@
     }
     nav a:hover, nav button:hover { transform: translateY(-1px); background: rgba(255,255,255,.8); border-color: var(--border); }
 
-    .hero { padding: 22px 0 8px; }
-    .hero-grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:22px; align-items:stretch; }
+    .hero { padding: 18px 0 10px; }
+    .hero-grid { display:grid; grid-template-columns: 1.18fr .82fr; gap:22px; align-items:stretch; }
     .card {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow); backdrop-filter: blur(10px);
     }
     .hero-main {
-      padding: 34px; min-height: 360px; display:flex; flex-direction:column; justify-content:space-between;
-      background: linear-gradient(135deg, rgba(20,83,45,.08), rgba(15,118,110,.06)), var(--surface);
+      padding: 34px; min-height: 390px; display:flex; flex-direction:column; justify-content:space-between;
+      background:
+        radial-gradient(circle at top right, rgba(15,118,110,.16), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(154,52,18,.09), transparent 28%),
+        linear-gradient(135deg, rgba(20,83,45,.09), rgba(15,118,110,.04)),
+        var(--surface);
+    }
+    .hero-badges {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+    }
+    .hero-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.88);
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-weight:800;
+      font-size:.9rem;
     }
     .eyebrow {
       display:inline-flex; align-items:center; gap:8px; width: fit-content; padding: 8px 14px;
@@ -83,7 +122,29 @@
     .btn-secondary { background:#fff; color:var(--text); border-color: var(--border); }
     .btn-danger { background:#fff4f3; border-color:#ffd7d4; color:var(--danger); }
 
-    .hero-side { padding:22px; display:grid; gap:14px; }
+    .hero-side { padding:22px; display:grid; gap:14px; align-content:start; }
+    .rank-card {
+      display:grid;
+      gap:14px;
+      padding:20px;
+      border-radius:18px;
+      background: linear-gradient(135deg, rgba(20,83,45,.08), rgba(15,118,110,.06));
+      border:1px solid rgba(20,83,45,.14);
+    }
+    .rank-card h3 { margin:0; font-size:1.6rem; font-family: Georgia, "Times New Roman", serif; }
+    .rank-chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+    .rank-chip {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.86);
+      border:1px solid var(--border);
+      font-size:.85rem;
+      font-weight:800;
+      color:var(--text);
+    }
     .info-box {
       padding:18px; border-radius:18px; background: linear-gradient(180deg, #fff, #f6faf7);
       border:1px solid var(--border);
@@ -92,7 +153,7 @@
     .info-value { margin:0; color: var(--muted); }
 
     main { padding: 10px 0 44px; }
-    .section { margin-top: 24px; padding: 28px; }
+    .section { margin-top: 24px; padding: 30px; background: rgba(255,255,255,.82); }
     .section-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
     .section h2 { margin:0 0 8px; font-size: 1.78rem; font-family: Georgia, "Times New Roman", serif; letter-spacing:-.02em; }
     .section-lead { margin:0; color: var(--muted); max-width: 72ch; }
@@ -137,7 +198,7 @@
     .student-actions { display:flex; flex-wrap:wrap; gap:10px; }
     .student-actions .btn { padding:10px 14px; }
 
-    .table-wrap { overflow-x:auto; border-radius:18px; border:1px solid var(--border); }
+    .table-wrap { overflow-x:auto; border-radius:18px; border:1px solid var(--border); background:#fff; }
     table { width:100%; border-collapse:collapse; min-width:760px; background:#fff; }
     th, td { padding:13px 12px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     th { background:#f7faf8; color:var(--primary); font-size:.92rem; }
@@ -196,11 +257,13 @@
       padding:18px 20px;
       font-weight:900;
       color:var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,250,248,.92));
     }
     .game-summary::-webkit-details-marker { display:none; }
     .game-summary span { color: var(--muted); font-weight:700; }
     .game-panel {
       padding: 0 20px 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(248,251,249,.92));
     }
 
     .game-shell {
@@ -310,11 +373,16 @@
       <div class="card hero-main">
         <div>
           <div class="eyebrow">Faqe e klasës me backend të përbashkët</div>
-          <h1>Signup, chat, money, shop, dhe duel 1v1 që i shohin të gjithë.</h1>
+          <h1>Klasa 9/1 me mini-lojëra të shpejta, coins, ranke dhe login të përbashkët.</h1>
           <p class="lead">
-            Kjo version ruan profilet në server, jo vetëm në browser. Kur dikush regjistrohet, profili i tij
-            shfaqet në anëtarët për të gjithë. Lojërat, paratë, dhe historia ruhen po ashtu në mënyrë të përbashkët.
+            Kjo faqe ruan profilet në server, jo vetëm në browser. Kur dikush regjistrohet, profili i tij
+            shfaqet për të gjithë, coins ruhen në backend, dhe mini-lojërat mbeten të sinkronizuara.
           </p>
+          <div class="hero-badges">
+            <span class="hero-badge">Mini games arena</span>
+            <span class="hero-badge">Virtual coins</span>
+            <span class="hero-badge">Ranked + solo play</span>
+          </div>
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="heroSignupBtn" type="button">Hap signup</button>
@@ -324,6 +392,16 @@
       </div>
 
       <aside class="card hero-side">
+        <div class="rank-card">
+          <div class="eyebrow" style="margin-top:0;">Competitive snapshot</div>
+          <h3 id="rankTitle">Bronze I</h3>
+          <p class="info-value" id="rankSummary">Pikët dhe coins vendosin rankun tënd.</p>
+          <div class="rank-chip-row">
+            <span class="rank-chip" id="rankPoints">0 pikë</span>
+            <span class="rank-chip" id="rankCoins">0 coins</span>
+            <span class="rank-chip" id="rankQueue">0 në radhë</span>
+          </div>
+        </div>
         <div class="info-box">
           <h3 class="info-title">Profili yt</h3>
           <p class="info-value" id="meInfo">Nuk ka profil të ruajtur</p>
@@ -342,6 +420,30 @@
 
   <main>
     <div class="container">
+      <section class="card section" id="arena">
+        <div class="section-head">
+          <div>
+            <h2>Arena e lojërave</h2>
+            <p class="section-lead">Kjo është zona e shpejtë për match, coins, dhe rankim. E ndërtuar që të duket më shumë si një platformë game sesa një formë e thjeshtë.</p>
+          </div>
+          <span class="badge" id="arenaBadge">Live arena</span>
+        </div>
+        <div class="grid-3">
+          <div class="mini-card soft">
+            <h3>Rank</h3>
+            <p id="arenaRank">Bronze I</p>
+          </div>
+          <div class="mini-card soft">
+            <h3>Coins</h3>
+            <p id="arenaCoins">0 coins</p>
+          </div>
+          <div class="mini-card soft">
+            <h3>Match queue</h3>
+            <p id="arenaQueue">0 lojtarë në radhë</p>
+          </div>
+        </div>
+      </section>
+
       <section class="card section" id="anetaresia">
         <div class="section-head">
           <div>
@@ -379,10 +481,10 @@
       <section class="card section" id="shop">
         <div class="section-head">
           <div>
-            <h2>Betting shop</h2>
-            <p class="section-lead">Bli pajisje me bucks. Disa japin fat, disa të mbrojnë, disa të japin bonus.</p>
+            <h2>Cosmetic shop</h2>
+            <p class="section-lead">Pajisje vizuale dhe efektet e vogla për ta bërë profilin tënd më të veçantë.</p>
           </div>
-          <span class="badge" id="shopBadge">Dyqani është aktiv</span>
+          <span class="badge" id="shopBadge">Shop aktiv</span>
         </div>
         <div class="grid-3" id="shopGrid"></div>
       </section>
@@ -390,10 +492,10 @@
       <section class="card section" id="games">
         <div class="section-head">
           <div>
-            <h2>Lojërat</h2>
-            <p class="section-lead">Bet në një lojë, ose bëj duel 1v1 me një nxënës tjetër ose me profilin tënd lokal.</p>
+            <h2>Mini-games arena</h2>
+            <p class="section-lead">Këtu është pjesa konkurruese: bete, duele, matchmaking, dhe lojëra të shkurtra me ritëm të shpejtë.</p>
           </div>
-          <span class="badge" id="gameBadge">Gati për lojë</span>
+          <span class="badge" id="gameBadge">Gati për match</span>
         </div>
         <div class="accordion-stack">
           <details class="game-accordion" open>
@@ -880,8 +982,20 @@
       $("#coinBadge").textContent = guess === "heads" ? "Po zgjedh kokë." : "Po zgjedh bisht.";
     }
 
+    function rankFromPoints(points) {
+      if (points >= 120) return "Legend";
+      if (points >= 80) return "Diamond";
+      if (points >= 50) return "Gold";
+      if (points >= 20) return "Silver";
+      return "Bronze";
+    }
+
     function render() {
       const me = currentMe();
+      const totalCoins = state.profiles.reduce((sum, p) => sum + moneyFor(p), 0);
+      const mePoints = pointsFor(me || {});
+      const rankTier = rankFromPoints(mePoints);
+      const queueCount = state.matchQueue.length;
       $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
       $("#creatorInfo").textContent = state.creatorActive ? "Aktiv" : "I çaktivizuar";
       $("#creatorEditBadge").textContent = state.creatorActive ? "Editimi: i hapur" : "Editimi: i mbyllur";
@@ -890,14 +1004,22 @@
       $("#statusInfo").textContent = state.profiles.length ? "Online" : "Duke pritur profile";
       $("#memberBadge").textContent = `${state.profiles.length} anëtarë`;
       $("#countProfiles").textContent = state.profiles.length;
-      $("#countMoney").textContent = state.profiles.reduce((sum, p) => sum + moneyFor(p), 0);
+      $("#countMoney").textContent = totalCoins;
       $("#countChat").textContent = state.chat.length;
       $("#countDuels").textContent = state.history.length;
-      $("#matchState").textContent = state.matchQueue.length ? `${state.matchQueue.length} lojtarë në radhë.` : "Askush nuk është në radhë.";
-      $("#moneyTotalBadge").textContent = `Totali: ${state.profiles.reduce((sum, p) => sum + moneyFor(p), 0)}$`;
+      $("#matchState").textContent = queueCount ? `${queueCount} lojtarë në radhë.` : "Askush nuk është në radhë.";
+      $("#moneyTotalBadge").textContent = `Totali: ${totalCoins}$`;
       $("#shopBadge").textContent = `Të dhëna: ${state.shop.length} artikuj`;
-      $("#gameBadge").textContent = me ? "Gati për lojë" : "Hap signup për të luajtur";
+      $("#gameBadge").textContent = me ? "Gati për match" : "Hap signup për të luajtur";
       $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Hape signup-in që të përdorësh emrin tënd në chat.";
+      $("#rankTitle").textContent = me ? `${rankTier} ${mePoints >= 100 ? "I" : mePoints >= 70 ? "II" : mePoints >= 40 ? "III" : ""}`.trim() : "Bronze I";
+      $("#rankSummary").textContent = me ? `Rangu bazohet te pikët e tua dhe aktiviteti i klasës.` : "Regjistrohu për të parë rankun tënd.";
+      $("#rankPoints").textContent = `${mePoints} pikë`;
+      $("#rankCoins").textContent = `${me ? moneyFor(me) : 0} coins`;
+      $("#rankQueue").textContent = `${queueCount} në radhë`;
+      $("#arenaRank").textContent = me ? `${rankTier} ${mePoints >= 100 ? "I" : mePoints >= 70 ? "II" : mePoints >= 40 ? "III" : ""}`.trim() : "Bronze I";
+      $("#arenaCoins").textContent = `${me ? moneyFor(me) : 0} coins`;
+      $("#arenaQueue").textContent = `${queueCount} lojtarë në radhë`;
 
       const yourSlot = $("#yourProfileSlot");
       if (me) {
