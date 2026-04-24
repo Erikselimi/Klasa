@@ -14,7 +14,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SUPABASE_TABLE = process.env.SUPABASE_TABLE || "class_portal_state";
 
-//orari bazë i javës kur nuk ka ende të dhëna të tjera
 const DEFAULT_SCHEDULE = {
   monday: "Matematikë, Gjuhë shqipe",
   tuesday: "Histori, Biologji",
@@ -23,24 +22,28 @@ const DEFAULT_SCHEDULE = {
   friday: "Art, Edukim fizik, Këshillim klase"
 };
 
-//artikujt fillestarë të dyqanit të lojës
 const DEFAULT_SHOP = [
   { id: "lucky_ticket", name: "Biletë me Fat", price: 25, effectLabel: "Shton fat", description: "Një shans për të rritur fitimin në lojën tjetër." },
   { id: "shield", name: "Mbrojtje", price: 40, effectLabel: "Mbron humbjen", description: "Mbron nga humbja e parë në një duel ose bet." },
   { id: "double", name: "Double Up", price: 30, effectLabel: "Dyfishon fitimin", description: "Dyfishon fitimin në një fitore të ardhshme." }
 ];
 
-// krijon një ID unike për profilet, mesazhet dhe ngjarjet
 function uid() {
   return crypto.randomUUID();
 }
 
-//ruan kohën aktuale në format të standardizuar
 function now() {
   return new Date().toISOString();
 }
 
-//gjendja fillestare e gjithë faqes së klasës
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Client-Id, X-Clientid, X-Creator-Token"
+  };
+}
+
 function defaultData() {
   return {
     profiles: [
@@ -80,7 +83,6 @@ function defaultData() {
   };
 }
 
-//rregullon të dhënat që të kenë gjithmonë të njëjtën formë
 function normalizeData(input) {
   const fresh = defaultData();
   return {
@@ -99,13 +101,12 @@ function normalizeData(input) {
     schedule: { ...fresh.schedule, ...(input.schedule || {}) },
     chat: Array.isArray(input.chat) ? input.chat : fresh.chat,
     history: Array.isArray(input.history) ? input.history : fresh.history,
-    matchQueue: Array.isArray(input.matchQueue) ? input.matchQueue : fresh.matchQueue,
+    matchQueue: Array.isArray(input.matchQueue) ? input.matchQueue : [],
     shop: Array.isArray(input.shop) ? input.shop : fresh.shop,
     creatorActive: Boolean(input.creatorActive)
   };
 }
 
-//nëse ka Supabase, ruajmë aty; përndryshe përdorim file lokal
 const hasSupabase = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const supabase = hasSupabase
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -113,7 +114,6 @@ const supabase = hasSupabase
     })
   : null;
 
-//lexon gjendjen nga backend-i ose nga file lokal
 async function readData() {
   if (supabase) {
     const { data, error } = await supabase
@@ -147,7 +147,6 @@ async function readData() {
   }
 }
 
-//shkruan gjendjen në Supabase ose në file lokal
 async function writeData(data) {
   if (supabase) {
     const payload = normalizeData(data);
@@ -162,22 +161,20 @@ async function writeData(data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
-//përgjigje JSON për endpoint-et API
 function sendJson(res, status, payload) {
   res.writeHead(status, {
+    ...corsHeaders(),
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
   });
   res.end(JSON.stringify(payload));
 }
 
-// përgjigje tekst për file statik ose mesazhe gabimi
 function sendText(res, status, text, contentType = "text/plain; charset=utf-8") {
-  res.writeHead(status, { "Content-Type": contentType });
+  res.writeHead(status, { ...corsHeaders(), "Content-Type": contentType });
   res.end(text);
 }
 
-// lexon trupin e kërkesës POST si JSON
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -195,14 +192,12 @@ function parseBody(req) {
   });
 }
 
-//shfaq emrin, mbiemrin, dhe nëse ka, nofkën
 function displayName(profile) {
   if (!profile) return "";
   const full = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
   return profile.nickname ? `${full} (${profile.nickname})` : full;
 }
 
-//pikët dhe paratë mbahen si numra të pastër
 function pointsFor(profile) {
   return Number(profile.points || 0);
 }
@@ -211,18 +206,15 @@ function moneyFor(profile) {
   return Number(profile.money || 0);
 }
 
-//gjen profilin sipas clientId-së
 function getProfile(data, clientId) {
   return data.profiles.find((p) => p.id === clientId) || null;
 }
 
-//kontrollon nëse kërkesa ka token të krijuesit
 function requireAdmin(req, adminSessions) {
   const token = req.headers["x-creator-token"];
   return token && adminSessions.has(String(token));
 }
 
-// ndërton gjendjen që i dërgohet browser-it
 function makeState(data, req, adminSessions) {
   const clientId = req.headers["x-client-id"] || req.headers["x-clientid"] || "";
   const me = clientId ? getProfile(data, clientId) : null;
@@ -232,13 +224,12 @@ function makeState(data, req, adminSessions) {
     schedule: data.schedule,
     chat: data.chat,
     history: data.history,
-    matchQueue: data.matchQueue,
+    matchQueue: data.matchQueue || [],
     shop: data.shop,
     creatorActive: requireAdmin(req, adminSessions)
   };
 }
 
-//shërben index.html dhe file të tjerë statikë nga i njëjti server
 function routeStatic(req, res, pathname) {
   if (pathname === "/" || pathname === "/index.html") {
     const html = fs.readFileSync(INDEX_FILE, "utf8");
@@ -249,17 +240,14 @@ function routeStatic(req, res, pathname) {
 }
 
 async function main() {
-  //ngarkon të dhënat dhe mban sesionet e krijuesit në memorie
   let data = await readData();
   const adminSessions = new Set();
 
-  //ruan gjendjen dhe pastaj i kthen përgjigje klientit
   async function saveAndRespond(res, payload) {
     await writeData(data);
     sendJson(res, 200, payload);
   }
 
-  //krijon ose përditëson profilin e një nxënësi
   function updateProfileFromBody(body) {
     const clientId = String(body.clientId || "").trim() || uid();
     let profile = getProfile(data, clientId);
@@ -294,7 +282,6 @@ async function main() {
     return profile;
   }
 
-  // shton mesazh të ri në chat me emrin e profilit
   function addChatMessage(body) {
     const profile = getProfile(data, body.clientId);
     const author = profile ? (profile.nickname?.trim() || displayName(profile)) : "Anëtar i klasës";
@@ -308,12 +295,10 @@ async function main() {
     });
   }
 
-  // pastron chat-in, por lë një mesazh sistemi
   function clearChat() {
     data.chat = [{ id: uid(), type: "system", author: "Sistemi", text: "Chat-i u pastrua.", createdAt: now() }];
   }
 
-  // Koment në shqip: shton një pikë dhe 5 bucks për një kategori të caktuar
   function adminPoint(body) {
     const profile = getProfile(data, body.id);
     if (!profile) throw new Error("Profili nuk u gjet.");
@@ -323,14 +308,12 @@ async function main() {
     profile.updatedAt = now();
   }
 
-  //heq një anëtar nga lista e klasës
   function adminDelete(body) {
     const idx = data.profiles.findIndex((p) => p.id === body.id);
     if (idx === -1) throw new Error("Profili nuk u gjet.");
-    const removed = data.profiles.splice(idx, 1)[0];
+    data.profiles.splice(idx, 1);
   }
 
-  //ruan orarin e javës me 5 ditë
   function adminSchedule(body) {
     data.schedule = {
       monday: body.monday || data.schedule.monday,
@@ -341,7 +324,6 @@ async function main() {
     };
   }
 
-  //bet i thjeshtë me fitore ose humbje të rastësishme
   function doBet(body, mode) {
     const profile = getProfile(data, body.playerId);
     if (!profile) throw new Error("Lojtari nuk u gjet.");
@@ -355,7 +337,6 @@ async function main() {
     return { won, message: `${displayName(profile)} ${won ? "fitoi" : "humbi"} ${wager}$ në ${mode}. Tani ka ${profile.money}$.` };
   }
 
-  //duel 1v1 që i jep fituesit pot-in e betit
   function doDuel(body) {
     const left = getProfile(data, body.leftId);
     const right = getProfile(data, body.rightId);
@@ -382,67 +363,148 @@ async function main() {
     return { won: winner.id === left.id, message: `${displayName(winner)} fitoi duel-in kundër ${displayName(loser)} dhe mori ${pot}$.` };
   }
 
-  //fut lojtarin në radhën e ndeshjeve dhe auto-pair kur ka dikë tjetër
-  function joinMatchQueue(body) {
-    const profile = getProfile(data, body.clientId);
-    if (!profile) throw new Error("Duhet profil për të hyrë në match.");
-
-    const stake = Math.max(1, Number(body.stake || 0));
-    data.matchQueue = (data.matchQueue || []).filter((entry) => entry.clientId !== profile.id);
-
-    const meEntry = {
-      id: uid(),
-      clientId: profile.id,
-      name: displayName(profile),
-      stake,
-      createdAt: now()
+  function doCoinFlip(body) {
+    const profile = getProfile(data, body.playerId || body.clientId);
+    if (!profile) throw new Error("Lojtari nuk u gjet.");
+    const guess = body.guess === "tails" ? "tails" : "heads";
+    const amount = Math.max(1, Number(body.amount || 0));
+    const current = moneyFor(profile);
+    const wager = Math.min(current, amount);
+    if (wager <= 0) throw new Error("Nuk ka para të mjaftueshme.");
+    const face = Math.random() >= 0.5 ? "heads" : "tails";
+    const won = face === guess;
+    profile.money = Math.max(0, current + (won ? wager : -wager));
+    profile.updatedAt = now();
+    return {
+      won,
+      face,
+      guess,
+      message: `${displayName(profile)} hodhi ${face === "heads" ? "kokë" : "bisht"} dhe ${won ? "fitoi" : "humbi"} ${wager}$. Tani ka ${profile.money}$.`
     };
+  }
 
-    const opponent = data.matchQueue.find((entry) => entry.clientId !== profile.id);
-    if (!opponent) {
-      data.matchQueue.push(meEntry);
-      return { waiting: true, queue: data.matchQueue };
+  function beats(moveA, moveB) {
+    return (moveA === "rock" && moveB === "scissors")
+      || (moveA === "paper" && moveB === "rock")
+      || (moveA === "scissors" && moveB === "paper");
+  }
+
+  function doRpsDuel(body) {
+    const left = getProfile(data, body.leftId);
+    const right = getProfile(data, body.rightId);
+    if (!left || !right) throw new Error("Zgjidh dy lojtarë të vlefshëm.");
+    if (left.id === right.id) throw new Error("Zgjidh dy lojtarë të ndryshëm.");
+
+    const moveLeft = body.moveLeft === "paper" || body.moveLeft === "scissors" ? body.moveLeft : "rock";
+    const moveRight = body.moveRight === "paper" || body.moveRight === "scissors" ? body.moveRight : "rock";
+    const amount = Math.max(1, Number(body.amount || 0));
+    const leftMoney = moneyFor(left);
+    const rightMoney = moneyFor(right);
+    const pot = Math.min(amount, leftMoney, rightMoney);
+    if (pot <= 0) throw new Error("Nuk ka para të mjaftueshme për RPS.");
+
+    let winner = null;
+    let loser = null;
+    if (moveLeft !== moveRight) {
+      if (beats(moveLeft, moveRight)) {
+        winner = left;
+        loser = right;
+      } else {
+        winner = right;
+        loser = left;
+      }
+      winner.money = moneyFor(winner) + pot;
+      loser.money = Math.max(0, moneyFor(loser) - pot);
+      winner.updatedAt = now();
+      loser.updatedAt = now();
+      data.history.push({
+        createdAt: now(),
+        leftName: displayName(left),
+        rightName: displayName(right),
+        winnerName: displayName(winner),
+        amount: pot,
+        type: "rps"
+      });
+      return {
+        won: winner.id === left.id,
+        draw: false,
+        winnerName: displayName(winner),
+        message: `${displayName(left)} zgjodhi ${moveLeft}, ${displayName(right)} zgjodhi ${moveRight}. ${displayName(winner)} fitoi ${pot}$.`
+      };
     }
-
-    data.matchQueue = data.matchQueue.filter((entry) => entry.clientId !== opponent.clientId);
-    const opponentProfile = getProfile(data, opponent.clientId);
-    if (!opponentProfile) throw new Error("Profili i kundërshtarit nuk u gjet.");
-
-    const pot = Math.min(stake, Number(opponent.stake || 0), moneyFor(profile), moneyFor(opponentProfile));
-    if (pot <= 0) throw new Error("Nuk ka para të mjaftueshme për match.");
-
-    const winner = Math.random() >= 0.5 ? profile : opponentProfile;
-    const loser = winner.id === profile.id ? opponentProfile : profile;
-    winner.money = moneyFor(winner) + pot;
-    loser.money = Math.max(0, moneyFor(loser) - pot);
-    winner.updatedAt = now();
-    loser.updatedAt = now();
 
     data.history.push({
       createdAt: now(),
-      leftName: displayName(profile),
-      rightName: opponent.name,
-      winnerName: displayName(winner),
-      amount: pot,
-      type: "matchmaking"
+      leftName: displayName(left),
+      rightName: displayName(right),
+      winnerName: "Barazim",
+      amount: 0,
+      type: "rps"
     });
     return {
-      waiting: false,
-      matched: true,
-      queue: data.matchQueue,
-      message: `${displayName(profile)} u përputh me ${opponent.name} për ${pot}$. Fituesi: ${displayName(winner)}.`
+      won: false,
+      draw: true,
+      winnerName: "Barazim",
+      message: `${displayName(left)} dhe ${displayName(right)} zgjodhën ${moveLeft}. U bë barazim.`
     };
   }
 
-  //largo profilin nga radhë nëse nuk do më të presë
-  function leaveMatchQueue(body) {
+  function joinMatchQueue(body) {
     const profile = getProfile(data, body.clientId);
-    if (!profile) throw new Error("Duhet profil për të dalë nga match.");
+    if (!profile) throw new Error("Duhet profil për të kërkuar match.");
+    const stake = Math.max(1, Number(body.stake || 10));
     data.matchQueue = (data.matchQueue || []).filter((entry) => entry.clientId !== profile.id);
-    return { queue: data.matchQueue };
+    data.matchQueue.push({
+      clientId: profile.id,
+      stake,
+      name: displayName(profile),
+      joinedAt: now()
+    });
+
+    let message = `${displayName(profile)} hyri në radhën e match-it.`;
+    if (data.matchQueue.length >= 2) {
+      const first = data.matchQueue.shift();
+      const second = data.matchQueue.shift();
+      const left = getProfile(data, first.clientId);
+      const right = getProfile(data, second.clientId);
+      if (left && right && left.id !== right.id) {
+        const pot = Math.min(first.stake, second.stake, moneyFor(left), moneyFor(right));
+        if (pot > 0) {
+          const winner = Math.random() >= 0.5 ? left : right;
+          const loser = winner.id === left.id ? right : left;
+          winner.money = moneyFor(winner) + pot;
+          loser.money = Math.max(0, moneyFor(loser) - pot);
+          winner.updatedAt = now();
+          loser.updatedAt = now();
+          data.history.push({
+            createdAt: now(),
+            leftName: displayName(left),
+            rightName: displayName(right),
+            winnerName: displayName(winner),
+            amount: pot,
+            type: "match"
+          });
+          message = `${displayName(left)} u ndesh me ${displayName(right)}. ${displayName(winner)} fitoi ${pot}$.`;
+        } else {
+          message = "Match-i u krijua, por një lojtar nuk kishte para të mjaftueshme.";
+        }
+      }
+    }
+    return { message, queue: data.matchQueue };
   }
 
-  //  blen një artikull nga dyqani i lojës
+  function leaveMatchQueue(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për të dalë nga radha.");
+    const before = (data.matchQueue || []).length;
+    data.matchQueue = (data.matchQueue || []).filter((entry) => entry.clientId !== profile.id);
+    const changed = before !== data.matchQueue.length;
+    return {
+      message: changed ? `${displayName(profile)} doli nga radhë.` : `${displayName(profile)} nuk ishte në radhë.`,
+      queue: data.matchQueue
+    };
+  }
+
   function buyShopItem(body) {
     const profile = getProfile(data, body.clientId);
     if (!profile) throw new Error("Duhet profil për të blerë.");
@@ -455,12 +517,17 @@ async function main() {
     profile.updatedAt = now();
   }
 
-  //  serveri HTTP që i shërben faqes dhe API-t
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
     try {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, corsHeaders());
+        res.end();
+        return;
+      }
+
       if (req.method === "GET" && pathname === "/api/state") {
         return sendJson(res, 200, makeState(data, req, adminSessions));
       }
@@ -542,6 +609,18 @@ async function main() {
         return saveAndRespond(res, result);
       }
 
+      if (req.method === "POST" && pathname === "/api/game/coin") {
+        const body = await parseBody(req);
+        const result = doCoinFlip(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/rps") {
+        const body = await parseBody(req);
+        const result = doRpsDuel(body);
+        return saveAndRespond(res, result);
+      }
+
       if (req.method === "POST" && pathname === "/api/game/match/join") {
         const body = await parseBody(req);
         const result = joinMatchQueue(body);
@@ -578,7 +657,6 @@ async function main() {
     }
   });
 
-  //  nis serverin në portin që jep hosting-u
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -587,7 +665,6 @@ async function main() {
   });
 }
 
-//  nis gjithë aplikacionin dhe kap gabimet e startup-it
 main().catch((err) => {
   console.error(err);
   process.exit(1);

@@ -107,6 +107,10 @@
     }
     .mini-card h3 { margin:0 0 10px; font-size:1.04rem; }
     .mini-card p { margin:0; color: var(--muted); }
+    .mini-card.soft {
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,250,248,.95));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+    }
 
     .stats { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:14px; margin-top:18px; }
     .stat { padding:16px; border-radius:18px; border:1px solid var(--border); background: rgba(255,255,255,.78); }
@@ -174,6 +178,68 @@
     .panel { display:grid; gap:14px; }
     .footer { padding:0 0 28px; text-align:center; color: var(--muted); }
 
+    .game-shell {
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    .game-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:16px;
+    }
+    .game-stage {
+      display:grid;
+      gap:14px;
+      padding:20px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(20,83,45,.06), rgba(15,118,110,.03));
+      border:1px solid var(--border);
+    }
+    .status-strip {
+      padding:12px 14px;
+      border-radius:16px;
+      background:#f8fbf9;
+      border:1px dashed rgba(20,83,45,.2);
+      color:var(--muted);
+      font-weight:700;
+    }
+    .pill-row { display:flex; flex-wrap:wrap; gap:10px; }
+    .pill {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 14px; border-radius:999px;
+      background:#fff; border:1px solid var(--border);
+      font-weight:800; color:var(--text);
+      cursor:pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .pill:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(18,33,43,.06); }
+    .pill.active { border-color: rgba(20,83,45,.55); background: rgba(20,83,45,.09); color: var(--primary); }
+    .coin-wrap {
+      display:grid;
+      place-items:center;
+      padding:18px 0 8px;
+      min-height:220px;
+    }
+    .coin {
+      width:min(150px, 40vw);
+      aspect-ratio:1;
+      object-fit:cover;
+      border-radius:50%;
+      border:10px solid rgba(20,83,45,.12);
+      box-shadow: 0 18px 32px rgba(18,33,43,.18);
+      background:#fff;
+      transform-style:preserve-3d;
+    }
+    .coin.spin { animation: coinFlip 1.05s cubic-bezier(.22,.61,.36,1) both; }
+    @keyframes coinFlip {
+      0% { transform: rotateY(0deg) scale(1); }
+      30% { transform: rotateY(540deg) scale(1.04); }
+      60% { transform: rotateY(1080deg) scale(.96); }
+      100% { transform: rotateY(1440deg) scale(1); }
+    }
+
     .animate-pop { animation: pop .45s ease; }
     .animate-win { animation: winGlow .6s ease; }
     .animate-loss { animation: lossGlow .6s ease; }
@@ -182,7 +248,7 @@
     @keyframes lossGlow { 0% { box-shadow: 0 0 0 rgba(180,35,24,0); } 60% { box-shadow: 0 0 0 7px rgba(180,35,24,.15); } 100% { box-shadow: 0 0 0 rgba(180,35,24,0); } }
 
     @media (max-width: 1000px) {
-      .hero-grid, .grid-2, .grid-3, .roster, .stats { grid-template-columns: 1fr; }
+      .hero-grid, .grid-2, .grid-3, .roster, .stats, .game-shell, .game-grid { grid-template-columns: 1fr; }
       .topbar { border-radius:24px; align-items:flex-start; flex-direction:column; }
       nav { justify-content:flex-start; }
     }
@@ -209,13 +275,11 @@
         <a href="#shop">Store</a>
         <a href="#games">Lojërat</a>
         <a href="#biseda">Biseda</a>
-        <button id="openSourceBtn" type="button">Shfaq kodin</button>
         <button id="openCreatorBtn" type="button">Krijuesi</button>
       </nav>
     </div>
   </header>
 
-  <!-- Seksioni kryesor: prezanton faqen dhe idenë e klasës -->
   <section class="hero">
     <div class="container hero-grid">
       <div class="card hero-main">
@@ -253,7 +317,6 @@
 
   <main>
     <div class="container">
-      <!-- Anëtarët: këtu shfaqet profili i çdo nxënësi -->
       <section class="card section" id="anetaresia">
         <div class="section-head">
           <div>
@@ -277,7 +340,6 @@
         <div class="roster" id="roster"></div>
       </section>
 
-      <!-- Orari: 5 ditë, dhe vetëm krijuesi e ndryshon -->
       <section class="card section" id="orari">
         <div class="section-head">
           <div>
@@ -289,7 +351,6 @@
         <div class="grid-3" id="scheduleGrid"></div>
       </section>
 
-      <!-- Dyqani i lojës: artikuj që blihen me bucks -->
       <section class="card section" id="shop">
         <div class="section-head">
           <div>
@@ -301,7 +362,6 @@
         <div class="grid-3" id="shopGrid"></div>
       </section>
 
-      <!-- Lojërat: bet dhe duel 1v1 -->
       <section class="card section" id="games">
         <div class="section-head">
           <div>
@@ -309,39 +369,6 @@
             <p class="section-lead">Bet në një lojë, ose bëj duel 1v1 me një nxënës tjetër ose me profilin tënd lokal.</p>
           </div>
           <span class="badge" id="gameBadge">Gati për lojë</span>
-        </div>
-
-        <div class="mini-card" style="margin-bottom:16px;">
-          <h3>Match online</h3>
-          <p class="note" style="margin-bottom:12px;">Hyr në radhë dhe faqja do të të përputhë me dikë tjetër që po kërkon ndeshje.</p>
-          <div class="grid-2">
-            <div class="field">
-              <label for="matchStake">Beti i match-it</label>
-              <input id="matchStake" type="number" min="1" step="1" value="10" />
-            </div>
-            <div class="field">
-              <label for="matchState">Gjendja</label>
-              <input id="matchState" type="text" value="Nuk je në radhë" readonly />
-            </div>
-          </div>
-          <div class="actions" style="margin-top:12px;">
-            <button class="btn btn-primary" id="joinMatchBtn" type="button">Kërko match</button>
-            <button class="btn btn-secondary" id="leaveMatchBtn" type="button">Dil nga radha</button>
-          </div>
-          <div style="height:12px;"></div>
-          <div class="table-wrap">
-            <table style="min-width:100%;">
-              <thead>
-                <tr>
-                  <th>Radhë</th>
-                  <th>Lojtari</th>
-                  <th>Beti</th>
-                  <th>Koha</th>
-                </tr>
-              </thead>
-              <tbody id="matchQueueBody"></tbody>
-            </table>
-          </div>
         </div>
 
         <div class="grid-2">
@@ -386,9 +413,110 @@
             <p id="duelResult" class="note" style="margin-top:12px;">Dueli shfaqet këtu.</p>
           </div>
         </div>
+
+        <div class="game-shell">
+          <div class="mini-card soft">
+            <h3>Match online</h3>
+            <p>Shiko kush është në radhë dhe futu për të gjetur një kundërshtar.</p>
+            <div class="composer" style="margin-top:14px;">
+              <div class="field">
+                <label for="matchStake">Beti</label>
+                <input id="matchStake" type="number" min="1" step="1" value="10" />
+              </div>
+              <div class="actions" style="margin-top:0;">
+                <button class="btn btn-primary" id="joinMatchBtn" type="button">Kërko match</button>
+                <button class="btn btn-secondary" id="leaveMatchBtn" type="button">Dil nga radha</button>
+              </div>
+              <div class="status-strip" id="matchState">Askush nuk është në radhë.</div>
+              <div class="table-wrap">
+                <table style="min-width:100%;">
+                  <thead>
+                    <tr>
+                      <th>Lojtari</th>
+                      <th>Beti</th>
+                    </tr>
+                  </thead>
+                  <tbody id="matchQueueBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-grid">
+            <div class="mini-card soft">
+              <h3>Monedha reale</h3>
+              <p>Zgjidh anën, shëno shumën dhe hidhe me animacion.</p>
+              <div class="composer" style="margin-top:14px;">
+                <div class="field">
+                  <label for="coinPlayer">Lojtari</label>
+                  <select id="coinPlayer"></select>
+                </div>
+                <div class="field">
+                  <label for="coinAmount">Shuma</label>
+                  <input id="coinAmount" type="number" min="1" step="1" value="10" />
+                </div>
+                <div class="pill-row">
+                  <button class="pill active" id="guessHeadsBtn" type="button">Kokë</button>
+                  <button class="pill" id="guessTailsBtn" type="button">Bisht</button>
+                </div>
+                <div class="coin-wrap">
+                  <img id="coinImage" class="coin" src="heads.png" alt="Monedhë" />
+                </div>
+                <div class="status-strip" id="coinBadge">Po pret zgjedhjen.</div>
+                <div class="actions" style="margin-top:0;">
+                  <button class="btn btn-primary" id="flipCoinBtn" type="button">Hidhe monedhën</button>
+                </div>
+              </div>
+              <p id="coinResult" class="note" style="margin-top:12px;">Rezultati i monedhës shfaqet këtu.</p>
+            </div>
+
+            <div class="mini-card soft">
+              <h3>Rock Paper Scissors</h3>
+              <p>Një mini-lojë tjetër 1v1 me zgjedhje dhe fitues të qartë.</p>
+              <div class="composer" style="margin-top:14px;">
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="rpsA">Lojtari 1</label>
+                    <select id="rpsA"></select>
+                  </div>
+                  <div class="field">
+                    <label for="rpsB">Lojtari 2</label>
+                    <select id="rpsB"></select>
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="rpsMoveA">Zgjedhja 1</label>
+                    <select id="rpsMoveA">
+                      <option value="rock">Gur</option>
+                      <option value="paper">Letër</option>
+                      <option value="scissors">Gërshërë</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="rpsMoveB">Zgjedhja 2</label>
+                    <select id="rpsMoveB">
+                      <option value="rock">Gur</option>
+                      <option value="paper">Letër</option>
+                      <option value="scissors">Gërshërë</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="rpsStake">Beti</label>
+                  <input id="rpsStake" type="number" min="1" step="1" value="10" />
+                </div>
+                <div class="actions" style="margin-top:0;">
+                  <button class="btn btn-primary" id="startRpsBtn" type="button">Luaj RPS</button>
+                </div>
+              </div>
+              <p id="rpsStatus" class="note" style="margin-top:12px;">Zgjidh dy lojtarë dhe një bet.</p>
+              <p id="rpsResult" class="note" style="margin-top:8px;">Rezultati i RPS shfaqet këtu.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <!-- Leaderboard: rendit kush ka më shumë para -->
       <section class="card section" id="leaderboard">
         <div class="section-head">
           <div>
@@ -413,7 +541,6 @@
         </div>
       </section>
 
-      <!-- Historia: ruan duel-et që ndodhin -->
       <section class="card section" id="history">
         <div class="section-head">
           <div>
@@ -437,7 +564,6 @@
         </div>
       </section>
 
-      <!-- Chat: mesazhet e klasës me tekst dhe foto -->
       <section class="card section" id="biseda">
         <div class="section-head">
           <div>
@@ -468,7 +594,6 @@
         </div>
       </section>
 
-      <!-- Paneli i krijuesit: editime, fshirje, dhe orar -->
       <section class="card section hidden" id="creatorPanel">
         <div class="section-head">
           <div>
@@ -554,7 +679,7 @@
   </main>
 
   <div class="footer">
-    <!--frontend-i e shfaq, backend-i e ruan për të gjithë -->
+    <!-- Koment në shqip: faqja është vetëm frontend; backend-i e bën të përbashkët -->
     <p>© 2026 Klasa 9/1. Të dhënat ruhen në backend dhe shfaqen për të gjithë.</p>
   </div>
 
@@ -602,34 +727,9 @@
     </div>
   </div>
 
-  <!-- Shikuesi i kodit: hap source-in brenda faqes për prezantim -->
-  <div class="modal-backdrop" id="sourceModal">
-    <div class="modal" style="width:min(980px, 100%);">
-      <div class="modal-head">
-        <div>
-          <h2>Shfaq kodin</h2>
-          <p class="section-lead" style="margin:0;">Zgjidh file-in që do të shfaqësh para klasës.</p>
-        </div>
-        <button class="btn btn-secondary" id="closeSourceBtn" type="button">Mbyll</button>
-      </div>
-      <div class="panel">
-        <div class="chips">
-          <button class="btn btn-secondary source-tab" type="button" data-source="index.html">index.html</button>
-          <button class="btn btn-secondary source-tab" type="button" data-source="server.js">server.js</button>
-          <button class="btn btn-secondary source-tab" type="button" data-source="supabase-schema.sql">supabase-schema.sql</button>
-          <button class="btn btn-secondary source-tab" type="button" data-source="README.md">README.md</button>
-        </div>
-        <div class="mini-card">
-          <p class="note" id="sourceCaption" style="margin:0 0 10px;">Zgjidh një file për ta parë.</p>
-          <pre id="sourceViewer" style="margin:0; max-height:56vh; overflow:auto; white-space:pre-wrap; word-break:break-word; font: 13px/1.5 'Courier New', monospace; background:#0f1720; color:#e5f0eb; padding:16px; border-radius:16px;"></pre>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    //kodi më poshtë lidh faqen me serverin dhe rifreskon ndërfaqen
-    const API_BASE = location.origin;
+    const LIVE_API_BASE = "https://klasa-1.onrender.com";
+    const API_BASE = (location.protocol === "http:" || location.protocol === "https:") ? location.origin : LIVE_API_BASE;
     const STORAGE = {
       clientId: "klasa-client-id",
       creatorToken: "klasa-creator-token",
@@ -641,20 +741,13 @@
       profiles: [],
       schedule: {},
       chat: [],
-      matchQueue: [],
       shop: [],
       history: [],
+      matchQueue: [],
       creatorActive: false,
+      coinGuess: "heads",
       lastGameMessage: "",
       lastDuelMessage: ""
-    };
-
-    //file-t që shfaqen në panelin "Shfaq kodin"
-    const SOURCE_FILES = {
-      "index.html": "/index.html",
-      "server.js": "/server.js",
-      "supabase-schema.sql": "/supabase-schema.sql",
-      "README.md": "/README.md"
     };
 
     function uid() {
@@ -683,14 +776,19 @@
     }
 
     async function api(path, options = {}) {
-      const res = await fetch(`${API_BASE}${path}`, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Client-Id": getClientId(),
-          ...(options.headers || {})
-        },
-        ...options,
-      });
+      let res;
+      try {
+        res = await fetch(`${API_BASE}${path}`, {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Client-Id": getClientId(),
+            ...(options.headers || {})
+          },
+          ...options,
+        });
+      } catch (err) {
+        throw new Error(`Nuk u lidh dot me serverin te ${API_BASE}${path}. Kontrollo internetin ose deploy-n.`);
+      }
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `HTTP ${res.status}`);
@@ -701,19 +799,8 @@
     function openModal(el) { el.classList.add("open"); }
     function closeModal(el) { el.classList.remove("open"); }
 
-    //  gjen profilin aktiv nga id-ja e pajisjes
     function currentMe() {
       return state.profiles.find((p) => p.id === getClientId()) || state.me;
-    }
-
-    //  ngarkon source-in e zgjedhur për prezantim
-    async function loadSource(fileName) {
-      const url = SOURCE_FILES[fileName];
-      if (!url) return;
-      $("#sourceCaption").textContent = `Duke shfaqur: ${fileName}`;
-      $("#sourceViewer").textContent = "Duke ngarkuar kodin...";
-      const res = await fetch(`${API_BASE}${url}`);
-      $("#sourceViewer").textContent = await res.text();
     }
 
     function profileDisplay(profile) {
@@ -747,7 +834,13 @@
       if (type === "loss") el.classList.add("animate-loss");
     }
 
-    //  render-i i vetëm për të gjitha kartat dhe listat
+    function setCoinGuess(guess) {
+      state.coinGuess = guess;
+      $("#guessHeadsBtn").classList.toggle("active", guess === "heads");
+      $("#guessTailsBtn").classList.toggle("active", guess === "tails");
+      $("#coinBadge").textContent = guess === "heads" ? "Po zgjedh kokë." : "Po zgjedh bisht.";
+    }
+
     function render() {
       const me = currentMe();
       $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
@@ -761,30 +854,11 @@
       $("#countMoney").textContent = state.profiles.reduce((sum, p) => sum + moneyFor(p), 0);
       $("#countChat").textContent = state.chat.length;
       $("#countDuels").textContent = state.history.length;
+      $("#matchState").textContent = state.matchQueue.length ? `${state.matchQueue.length} lojtarë në radhë.` : "Askush nuk është në radhë.";
       $("#moneyTotalBadge").textContent = `Totali: ${state.profiles.reduce((sum, p) => sum + moneyFor(p), 0)}$`;
       $("#shopBadge").textContent = `Të dhëna: ${state.shop.length} artikuj`;
       $("#gameBadge").textContent = me ? "Gati për lojë" : "Hap signup për të luajtur";
       $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Hape signup-in që të përdorësh emrin tënd në chat.";
-      $("#chatMessage").disabled = !me;
-      $("#chatImage").disabled = !me;
-      $("#sendChatBtn").disabled = !me;
-      $("#sendChatBtn").textContent = me ? "Dërgo" : "Hap signup";
-      $("#mondayInput").value = state.schedule.monday || "";
-      $("#tuesdayInput").value = state.schedule.tuesday || "";
-      $("#wednesdayInput").value = state.schedule.wednesday || "";
-      $("#thursdayInput").value = state.schedule.thursday || "";
-      $("#fridayInput").value = state.schedule.friday || "";
-      const scheduleEditable = !!state.creatorActive;
-      $("#mondayInput").disabled = !scheduleEditable;
-      $("#tuesdayInput").disabled = !scheduleEditable;
-      $("#wednesdayInput").disabled = !scheduleEditable;
-      $("#thursdayInput").disabled = !scheduleEditable;
-      $("#fridayInput").disabled = !scheduleEditable;
-      $("#saveScheduleBtn").disabled = !scheduleEditable;
-      $("#saveScheduleBtn").textContent = scheduleEditable ? "Ruaj orarin" : "Vetëm krijuesi";
-      $("#matchState").value = me
-        ? (state.matchQueue.some((entry) => entry.clientId === me.id) ? "Je në radhë për match" : "Nuk je në radhë")
-        : "Hape signup";
 
       const yourSlot = $("#yourProfileSlot");
       if (me) {
@@ -857,12 +931,28 @@
       $("#betPlayer").innerHTML = options;
       $("#duelA").innerHTML = options;
       $("#duelB").innerHTML = options;
+      $("#coinPlayer").innerHTML = options;
+      $("#rpsA").innerHTML = options;
+      $("#rpsB").innerHTML = options;
       if (players[0]) {
         $("#betPlayer").value = players[0].id;
         $("#duelA").value = players[0].id;
+        $("#coinPlayer").value = players[0].id;
+        $("#rpsA").value = players[0].id;
       }
       if (players[1]) $("#duelB").value = players[1].id;
       else if (players[0]) $("#duelB").value = players[0].id;
+      if (players[1]) $("#rpsB").value = players[1].id;
+      else if (players[0]) $("#rpsB").value = players[0].id;
+
+      $("#matchQueueBody").innerHTML = state.matchQueue.length
+        ? state.matchQueue.map((entry) => `
+            <tr>
+              <td>${escapeHtml(entry.name || "Lojtar")}</td>
+              <td>${Number(entry.stake || 0)}$</td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="2" style="color:var(--muted);">Radha është bosh.</td></tr>`;
 
       $("#leaderboardBody").innerHTML = players
         .sort((a, b) => b.money - a.money || b.points - a.points || a.name.localeCompare(b.name))
@@ -885,15 +975,6 @@
           <td>${h.amount}$</td>
         </tr>
       `).join("");
-
-      $("#matchQueueBody").innerHTML = (state.matchQueue || []).map((entry, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHtml(entry.name)}</td>
-          <td>${Number(entry.stake || 0)}$</td>
-          <td>${new Date(entry.createdAt).toLocaleTimeString("sq-AL", { hour: "2-digit", minute: "2-digit" })}</td>
-        </tr>
-      `).join("") || `<tr><td colspan="4" class="note">S’ka ende askënd në radhë.</td></tr>`;
 
       $("#chatFeed").innerHTML = state.chat.slice().reverse().map((m) => {
         if (m.type === "system") {
@@ -923,6 +1004,19 @@
         $("#editRole").value = selected.role || "";
       }
 
+      $("#mondayInput").value = state.schedule.monday || "";
+      $("#tuesdayInput").value = state.schedule.tuesday || "";
+      $("#wednesdayInput").value = state.schedule.wednesday || "";
+      $("#thursdayInput").value = state.schedule.thursday || "";
+      $("#fridayInput").value = state.schedule.friday || "";
+      $("#mondayInput").disabled = !state.creatorActive;
+      $("#tuesdayInput").disabled = !state.creatorActive;
+      $("#wednesdayInput").disabled = !state.creatorActive;
+      $("#thursdayInput").disabled = !state.creatorActive;
+      $("#fridayInput").disabled = !state.creatorActive;
+      $("#saveScheduleBtn").disabled = !state.creatorActive;
+      $("#saveScheduleBtn").textContent = state.creatorActive ? "Ruaj orarin" : "Vetëm krijuesi";
+      setCoinGuess(state.coinGuess);
     }
 
     async function loadState() {
@@ -932,9 +1026,9 @@
       state.profiles = data.profiles || [];
       state.schedule = data.schedule || {};
       state.chat = data.chat || [];
-      state.matchQueue = data.matchQueue || [];
       state.shop = data.shop || [];
       state.history = data.history || [];
+      state.matchQueue = data.matchQueue || [];
       state.creatorActive = data.creatorActive || false;
       render();
       $("#statusInfo").textContent = "Online";
@@ -983,6 +1077,10 @@
     }
 
     async function saveSchedule() {
+      if (!state.creatorActive) {
+        alert("Vetëm krijuesi mund ta ndryshojë orarin.");
+        return;
+      }
       await api("/api/admin/schedule", {
         method: "POST",
         headers: tokenHeaders(),
@@ -1019,10 +1117,9 @@
     }
 
     async function sendChat() {
-      const me = currentMe();
+      const me = state.me;
       if (!me) {
-        if (!$("#signupModal").classList.contains("open")) openModal($("#signupModal"));
-        $("#firstName").focus();
+        openModal($("#signupModal"));
         return;
       }
       const imageFile = $("#chatImage").files?.[0];
@@ -1076,38 +1173,90 @@
       await loadState();
     }
 
-    async function joinMatch() {
-      await api("/api/game/match/join", {
+    async function joinMatchQueue() {
+      if (!currentMe()) {
+        openModal($("#signupModal"));
+        return;
+      }
+      const result = await api("/api/game/match/join", {
         method: "POST",
         body: JSON.stringify({
           clientId: getClientId(),
-          stake: Number($("#matchStake").value || 0)
+          stake: Number($("#matchStake").value || 10)
         })
       });
+      $("#matchState").textContent = result.message;
       await loadState();
     }
 
-    async function leaveMatch() {
-      await api("/api/game/match/leave", {
+    async function leaveMatchQueue() {
+      if (!currentMe()) return;
+      const result = await api("/api/game/match/leave", {
         method: "POST",
         body: JSON.stringify({ clientId: getClientId() })
       });
+      $("#matchState").textContent = result.message;
+      await loadState();
+    }
+
+    async function flipCoin() {
+      if (!currentMe()) {
+        openModal($("#signupModal"));
+        return;
+      }
+      const playerId = $("#coinPlayer").value;
+      const amount = Number($("#coinAmount").value || 0);
+      const coinImage = $("#coinImage");
+      coinImage.src = state.coinGuess === "heads" ? "heads.png" : "tails.png";
+      coinImage.classList.remove("spin");
+      void coinImage.offsetWidth;
+      coinImage.classList.add("spin");
+      $("#coinResult").textContent = "Monedha po hidhet...";
+      const result = await api("/api/game/coin", {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: getClientId(),
+          playerId,
+          amount,
+          guess: state.coinGuess
+        })
+      });
+      coinImage.src = result.face === "heads" ? "heads.png" : "tails.png";
+      $("#coinBadge").textContent = result.won ? "Fitove me monedhë!" : "Humbje në monedhë.";
+      $("#coinResult").textContent = result.message;
+      setBubble($("#coinResult"), result.won ? "win" : "loss");
+      await loadState();
+    }
+
+    async function playRps() {
+      if (!currentMe()) {
+        openModal($("#signupModal"));
+        return;
+      }
+      const result = await api("/api/game/rps", {
+        method: "POST",
+        body: JSON.stringify({
+          clientId: getClientId(),
+          leftId: $("#rpsA").value,
+          rightId: $("#rpsB").value,
+          moveLeft: $("#rpsMoveA").value,
+          moveRight: $("#rpsMoveB").value,
+          amount: Number($("#rpsStake").value || 0)
+        })
+      });
+      $("#rpsStatus").textContent = result.draw ? "Barazim." : (result.winnerName || "Loja mbaroi.");
+      $("#rpsResult").textContent = result.message;
+      setBubble($("#rpsResult"), result.draw ? "" : (result.won ? "win" : "loss"));
       await loadState();
     }
 
     $("#openSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
     $("#heroSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
-    $("#openSourceBtn").addEventListener("click", async () => {
-      openModal($("#sourceModal"));
-      await loadSource("index.html");
-    });
     $("#openCreatorBtn").addEventListener("click", () => openModal($("#creatorModal")));
     $("#closeSignupBtn").addEventListener("click", () => closeModal($("#signupModal")));
     $("#closeCreatorBtn").addEventListener("click", () => closeModal($("#creatorModal")));
-    $("#closeSourceBtn").addEventListener("click", () => closeModal($("#sourceModal")));
     $("#signupModal").addEventListener("click", (e) => { if (e.target === $("#signupModal")) closeModal($("#signupModal")); });
     $("#creatorModal").addEventListener("click", (e) => { if (e.target === $("#creatorModal")) closeModal($("#creatorModal")); });
-    $("#sourceModal").addEventListener("click", (e) => { if (e.target === $("#sourceModal")) closeModal($("#sourceModal")); });
     $("#signupForm").addEventListener("submit", (e) => { e.preventDefault(); createOrUpdateProfile().catch(alert); });
     $("#clearProfileBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE.clientId); location.reload(); });
     $("#creatorLoginBtn").addEventListener("click", () => creatorLogin().catch((err) => alert(err.message)));
@@ -1120,16 +1269,16 @@
     $("#betDiceBtn").addEventListener("click", () => playBet("dice").catch(alert));
     $("#betCoinBtn").addEventListener("click", () => playBet("coin").catch(alert));
     $("#startDuelBtn").addEventListener("click", () => startDuel().catch(alert));
-    $("#joinMatchBtn").addEventListener("click", () => joinMatch().catch(alert));
-    $("#leaveMatchBtn").addEventListener("click", () => leaveMatch().catch(alert));
+    $("#joinMatchBtn").addEventListener("click", () => joinMatchQueue().catch(alert));
+    $("#leaveMatchBtn").addEventListener("click", () => leaveMatchQueue().catch(alert));
+    $("#guessHeadsBtn").addEventListener("click", () => setCoinGuess("heads"));
+    $("#guessTailsBtn").addEventListener("click", () => setCoinGuess("tails"));
+    $("#flipCoinBtn").addEventListener("click", () => flipCoin().catch(alert));
+    $("#startRpsBtn").addEventListener("click", () => playRps().catch(alert));
     $("#saveScheduleBtn").addEventListener("click", () => saveSchedule().catch(alert));
     $("#saveStudentBtn").addEventListener("click", () => saveStudent().catch(alert));
     $("#deleteStudentBtn").addEventListener("click", () => deleteStudent().catch(alert));
     $("#studentSelect").addEventListener("change", render);
-    $("#sourceModal").addEventListener("click", (event) => {
-      const tab = event.target.closest("[data-source]");
-      if (tab) loadSource(tab.dataset.source).catch(alert);
-    });
 
     $("#roster").addEventListener("click", async (event) => {
       const pointBtn = event.target.closest("[data-admin-point]");
