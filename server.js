@@ -977,15 +977,17 @@ async function main() {
   }
 
   function blackjackState(session, revealDealer = false) {
+    const showDealer = revealDealer || session.status === "finished";
     return {
       playerCards: session.playerCards,
-      dealerCards: revealDealer ? session.dealerCards : [session.dealerCards[0]],
+      dealerCards: showDealer ? session.dealerCards : [session.dealerCards[0]],
       playerTotal: blackjackValue(session.playerCards),
-      dealerTotal: revealDealer ? blackjackValue(session.dealerCards) : blackjackValue([session.dealerCards[0]]),
+      dealerTotal: showDealer ? blackjackValue(session.dealerCards) : blackjackValue([session.dealerCards[0]]),
       bet: session.bet,
       status: session.status,
       result: session.result || null,
-      revealDealer
+      revealDealer: showDealer,
+      message: session.message || null
     };
   }
 
@@ -1012,6 +1014,11 @@ async function main() {
       : outcome === "lose"
         ? `Humbje Blackjack.`
         : `Blackjack barazim, beti u kthye mbrapsht.`;
+    session.status = "finished";
+    session.result = outcome;
+    session.revealDealer = true;
+    session.message = message;
+    session.updatedAt = now();
     data.history.push({
       createdAt: now(),
       leftName: displayName(profile),
@@ -1020,8 +1027,8 @@ async function main() {
       amount: outcome === "win" ? session.bet : outcome === "push" ? 0 : session.bet,
       type: "blackjack"
     });
-    blackjackClearSession(clientId);
-    return { ok: true, outcome, message, state: null };
+    blackjackSetSession(clientId, session);
+    return { ok: true, outcome, message, state: blackjackState(session, true) };
   }
 
   function blackjackStart(body) {
@@ -1041,6 +1048,7 @@ async function main() {
       bet,
       status: "playing",
       result: null,
+      message: "Blackjack nisi.",
       createdAt: now(),
       updatedAt: now()
     };
@@ -1051,6 +1059,7 @@ async function main() {
     if (playerTotal === 21) {
       session.status = "playing";
       session.result = "blackjack";
+      session.message = "Blackjack nisi me 21. Mund të zgjedhësh Stand.";
       blackjackSetSession(profile.id, session);
       return { ok: true, state: blackjackState(session), message: "Blackjack nisi me 21. Mund të zgjedhësh Stand." };
     }
@@ -1067,12 +1076,10 @@ async function main() {
     session.updatedAt = now();
     const total = blackjackValue(session.playerCards);
     if (total > 21) {
-      session.status = "finished";
-      session.result = "lose";
-      blackjackSetSession(profile.id, session);
       const final = blackjackFinalize(profile.id, session, profile);
-      return { ...final, state: null, message: "U bust-ove. " + final.message };
+      return { ...final, message: "U bust-ove. " + final.message };
     }
+    session.message = `More një kartë. Totali yt është ${total}.`;
     blackjackSetSession(profile.id, session);
     return { ok: true, state: blackjackState(session), message: `More një kartë. Totali yt është ${total}.` };
   }
@@ -1086,10 +1093,8 @@ async function main() {
     while (blackjackValue(session.dealerCards) < 17) {
       session.dealerCards.push(session.deck.pop());
     }
-    session.status = "finished";
-    blackjackSetSession(profile.id, session);
     const final = blackjackFinalize(profile.id, session, profile);
-    return { ...final, dealerTotal: blackjackValue(session.dealerCards), state: null };
+    return { ...final, dealerTotal: blackjackValue(session.dealerCards), state: blackjackState(session, true) };
   }
 
   function blackjackStateRoute(body) {
@@ -1098,6 +1103,18 @@ async function main() {
     const session = blackjackSessionFor(profile.id);
     if (!session) return { ok: true, state: null };
     return { ok: true, state: blackjackState(session) };
+  }
+
+  function isOpenAiQuotaError(error) {
+    const text = String(error?.message || error?.body || error || "");
+    return /insufficient_quota|quota/i.test(text);
+  }
+
+  function openAiQuotaReply() {
+    return {
+      reply: "AI tani nuk mund të përgjigjet sepse kuota e OpenAI është mbaruar. Kontrollo billing-un ose ndrysho planin e API-së.",
+      usage: "quota"
+    };
   }
 
   async function askOpenAi(body) {
@@ -1136,8 +1153,19 @@ async function main() {
           max_tokens: 300
         })
       });
-      if (!response.ok) throw new Error(await response.text() || `OpenAI HTTP ${response.status}`);
-      const json = await response.json();
+      const raw = await response.text();
+      if (!response.ok) {
+        let parsed = null;
+        try {
+          parsed = raw ? JSON.parse(raw) : null;
+        } catch {}
+        const message = parsed?.error?.message || parsed?.message || raw || `OpenAI HTTP ${response.status}`;
+        const err = new Error(message);
+        err.body = raw;
+        err.status = response.status;
+        throw err;
+      }
+      const json = raw ? JSON.parse(raw) : {};
       const reply = json?.choices?.[0]?.message?.content?.trim();
       if (!reply) throw new Error("Nuk mora përgjigje nga AI.");
       return { reply, usage: "chat-completions" };
@@ -1159,8 +1187,19 @@ async function main() {
           max_output_tokens: 300
         })
       });
-      if (!response.ok) throw new Error(await response.text() || `OpenAI HTTP ${response.status}`);
-      const json = await response.json();
+      const raw = await response.text();
+      if (!response.ok) {
+        let parsed = null;
+        try {
+          parsed = raw ? JSON.parse(raw) : null;
+        } catch {}
+        const message = parsed?.error?.message || parsed?.message || raw || `OpenAI HTTP ${response.status}`;
+        const err = new Error(message);
+        err.body = raw;
+        err.status = response.status;
+        throw err;
+      }
+      const json = raw ? JSON.parse(raw) : {};
       const reply = String(json?.output_text || "").trim()
         || String(json?.output?.flatMap((item) => item?.content || []).map((part) => part?.text || "").join("")).trim();
       if (!reply) throw new Error("Nuk mora përgjigje nga AI.");
@@ -1170,9 +1209,13 @@ async function main() {
     try {
       return await callChatCompletions();
     } catch (chatError) {
+      if (isOpenAiQuotaError(chatError)) return openAiQuotaReply();
       try {
         return await callResponses();
       } catch (responsesError) {
+        if (isOpenAiQuotaError(responsesError) || isOpenAiQuotaError(chatError)) {
+          return openAiQuotaReply();
+        }
         throw new Error(`AI dështoi: ${String(responsesError?.message || chatError?.message || responsesError)}`);
       }
     }
