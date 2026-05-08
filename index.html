@@ -617,32 +617,6 @@
           </details>
 
           <details class="game-accordion">
-            <summary class="game-summary">1v1 duel <span>Dy lojtarë, një bet, një fitues</span></summary>
-            <div class="game-panel">
-              <div class="mini-card soft">
-                <div class="composer">
-                  <div class="field">
-                    <label for="duelA">Lojtari 1</label>
-                    <select id="duelA"></select>
-                  </div>
-                  <div class="field">
-                    <label for="duelB">Lojtari 2</label>
-                    <select id="duelB"></select>
-                  </div>
-                  <div class="field">
-                    <label for="duelStake">Beti</label>
-                    <input id="duelStake" type="number" min="1" step="1" value="10" />
-                  </div>
-                  <div class="actions" style="margin-top:0;">
-                    <button class="btn btn-primary" id="startDuelBtn" type="button">Fillo duel</button>
-                  </div>
-                </div>
-                <p id="duelResult" class="note" style="margin-top:12px;">Dueli shfaqet këtu.</p>
-              </div>
-            </div>
-          </details>
-
-          <details class="game-accordion">
             <summary class="game-summary">Match online <span>Lojtarët në radhë për t'u përputhur</span></summary>
             <div class="game-panel">
               <div class="mini-card soft">
@@ -1233,6 +1207,8 @@
       const mePoints = pointsFor(me || {});
       const rankTier = rankFromPoints(mePoints);
       const queueCount = state.matchQueue.length;
+      const scheduleFields = [$("#mondayInput"), $("#tuesdayInput"), $("#wednesdayInput"), $("#thursdayInput"), $("#fridayInput")];
+      const isEditingSchedule = scheduleFields.some((input) => input && document.activeElement === input);
       $("#meInfo").textContent = me ? `${profileDisplay(me)} | ${moneyFor(me)}$` : "Nuk ka profil të ruajtur";
       $("#creatorInfo").textContent = state.creatorActive ? "Aktiv" : "I çaktivizuar";
       $("#creatorEditBadge").textContent = state.creatorActive ? "Editimi: i hapur" : "Editimi: i mbyllur";
@@ -1327,16 +1303,11 @@
       const players = rosterMoneyPlayers();
       const options = players.map((p) => `<option value="${p.id}">${escapeHtml(p.name)} - ${p.money}$</option>`).join("");
       $("#betPlayer").innerHTML = options;
-      $("#duelA").innerHTML = options;
-      $("#duelB").innerHTML = options;
       $("#coinPlayer").innerHTML = options;
       if (players[0]) {
         $("#betPlayer").value = players[0].id;
-        $("#duelA").value = players[0].id;
         $("#coinPlayer").value = players[0].id;
       }
-      if (players[1]) $("#duelB").value = players[1].id;
-      else if (players[0]) $("#duelB").value = players[0].id;
 
       $("#matchQueueBody").innerHTML = state.matchQueue.length
         ? state.matchQueue.map((entry) => `
@@ -1403,11 +1374,13 @@
         $("#editRole").value = selected.role || "";
       }
 
-      $("#mondayInput").value = state.schedule.monday || "";
-      $("#tuesdayInput").value = state.schedule.tuesday || "";
-      $("#wednesdayInput").value = state.schedule.wednesday || "";
-      $("#thursdayInput").value = state.schedule.thursday || "";
-      $("#fridayInput").value = state.schedule.friday || "";
+      if (!isEditingSchedule) {
+        $("#mondayInput").value = state.schedule.monday || "";
+        $("#tuesdayInput").value = state.schedule.tuesday || "";
+        $("#wednesdayInput").value = state.schedule.wednesday || "";
+        $("#thursdayInput").value = state.schedule.thursday || "";
+        $("#fridayInput").value = state.schedule.friday || "";
+      }
       $("#mondayInput").disabled = !state.creatorActive;
       $("#tuesdayInput").disabled = !state.creatorActive;
       $("#wednesdayInput").disabled = !state.creatorActive;
@@ -1564,25 +1537,6 @@
       const result = await api("/api/game/bet", { method: "POST", body: JSON.stringify({ clientId: getClientId(), playerId, amount, mode }) });
       $("#betResult").textContent = result.message;
       setBubble($("#betResult"), result.won ? "win" : "loss");
-      await loadState();
-    }
-
-    async function startDuel() {
-      if (!currentMe()) {
-        requireProfileNotice("Krijo profilin një herë për të luajtur.");
-        return;
-      }
-      const result = await api("/api/game/duel", {
-        method: "POST",
-        body: JSON.stringify({
-          clientId: getClientId(),
-          leftId: $("#duelA").value,
-          rightId: $("#duelB").value,
-          amount: Number($("#duelStake").value || 0)
-        })
-      });
-      $("#duelResult").textContent = result.message;
-      setBubble($("#duelResult"), result.won ? "win" : "loss");
       await loadState();
     }
 
@@ -1812,7 +1766,6 @@
     $("#clearChatBtn").addEventListener("click", async () => { await api("/api/chat/clear", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({}) }); await loadState(); });
     $("#betDiceBtn").addEventListener("click", () => playBet("dice").catch(alert));
     $("#betCoinBtn").addEventListener("click", () => playBet("coin").catch(alert));
-    $("#startDuelBtn").addEventListener("click", () => startDuel().catch(alert));
     $("#joinMatchBtn").addEventListener("click", () => joinMatchQueue().catch(alert));
     $("#leaveMatchBtn").addEventListener("click", () => leaveMatchQueue().catch(alert));
     $("#guessHeadsBtn").addEventListener("click", () => setCoinGuess("heads"));

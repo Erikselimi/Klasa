@@ -1031,7 +1031,7 @@ async function main() {
     const bet = Math.max(1, Number(body.bet || 0));
     if (bet > moneyFor(profile)) throw new Error("Nuk ke mjaftueshëm coins.");
     const existing = blackjackSessionFor(profile.id);
-    if (existing) return { ok: true, state: blackjackState(existing), message: "Ke një lojë aktive." };
+    if (existing) blackjackClearSession(profile.id);
     profile.money = moneyFor(profile) - bet;
     profile.updatedAt = now();
     const session = {
@@ -1049,9 +1049,10 @@ async function main() {
     blackjackSetSession(profile.id, session);
     const playerTotal = blackjackValue(session.playerCards);
     if (playerTotal === 21) {
-      session.status = "stand";
+      session.status = "playing";
+      session.result = "blackjack";
       blackjackSetSession(profile.id, session);
-      return blackjackStand({ clientId: profile.id, auto: true });
+      return { ok: true, state: blackjackState(session), message: "Blackjack nisi me 21. Mund të zgjedhësh Stand." };
     }
     return { ok: true, state: blackjackState(session), message: "Blackjack nisi." };
   }
@@ -1132,7 +1133,6 @@ async function main() {
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          temperature: 0.7,
           max_tokens: 300
         })
       });
@@ -1156,7 +1156,6 @@ async function main() {
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          temperature: 0.7,
           max_output_tokens: 300
         })
       });
