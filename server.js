@@ -9,6 +9,10 @@ const PORT = Number(process.env.PORT || 3000);
 const CREATOR_PASSWORD = process.env.CREATOR_PASSWORD || "Erik2011";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "chat-latest";
+const AI_PROVIDER = (process.env.AI_PROVIDER || "").trim().toLowerCase() || (process.env.OLLAMA_BASE_URL ? "ollama" : "openai");
+const HAS_OLLAMA_URL = Boolean(process.env.OLLAMA_BASE_URL);
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
 const ROOT = __dirname;
 const INDEX_FILE = path.join(ROOT, "index.html");
 
@@ -1117,23 +1121,7 @@ async function main() {
     };
   }
 
-  async function askOpenAi(body) {
-    const profile = getProfile(data, body.clientId);
-    if (!profile) throw new Error("Duhet profil për AI.");
-    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
-    const text = String(body.text || "").trim();
-    if (!text) throw new Error("Shkruaj diçka për AI.");
-    if (containsBadWord(text)) {
-      setTimeoutFor(profile, 10, "Fjalë fyese në AI.");
-      throw new Error("Mesazhi u bllokua dhe profili u vendos në timeout 10 minuta.");
-    }
-    if (!OPENAI_API_KEY) {
-      return {
-        reply: "AI nuk është konfiguruar ende. Vendos OPENAI_API_KEY si env var në Render që të flasë me ty.",
-        usage: "offline"
-      };
-    }
-
+  async function callOpenAi(profile, text) {
     const systemPrompt = "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta. Mos jep këshilla për mashtrim, urrejtje, ose gjëra të dëmshme.";
     const userPrompt = `Profili: ${displayName(profile)}. Pyetja: ${text}`;
 
@@ -1219,6 +1207,63 @@ async function main() {
         throw new Error(`AI dështoi: ${String(responsesError?.message || chatError?.message || responsesError)}`);
       }
     }
+  }
+
+  async function callOllama(profile, text) {
+    const systemPrompt = "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta.";
+    const userPrompt = `Profili: ${displayName(profile)}. Pyetja: ${text}`;
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        stream: false
+      })
+    });
+    const raw = await response.text();
+    if (!response.ok) {
+      let parsed = null;
+      try {
+        parsed = raw ? JSON.parse(raw) : null;
+      } catch {}
+      const message = parsed?.error || parsed?.message || raw || `Ollama HTTP ${response.status}`;
+      throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+    }
+    const json = raw ? JSON.parse(raw) : {};
+    const reply = String(json?.message?.content || "").trim();
+    if (!reply) throw new Error("Nuk mora përgjigje nga Ollama.");
+    return { reply, usage: "ollama" };
+  }
+
+  async function askOpenAi(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për AI.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const text = String(body.text || "").trim();
+    if (!text) throw new Error("Shkruaj diçka për AI.");
+    if (containsBadWord(text)) {
+      setTimeoutFor(profile, 10, "Fjalë fyese në AI.");
+      throw new Error("Mesazhi u bllokua dhe profili u vendos në timeout 10 minuta.");
+    }
+    if (AI_PROVIDER === "ollama") {
+      return callOllama(profile, text);
+    }
+    if (!OPENAI_API_KEY) {
+      if (HAS_OLLAMA_URL || AI_PROVIDER === "ollama") {
+        return callOllama(profile, text);
+      }
+      return {
+        reply: "AI nuk është konfiguruar ende. Vendos OPENAI_API_KEY ose OLLAMA_BASE_URL që të flasë me ty.",
+        usage: "offline"
+      };
+    }
+    return callOpenAi(profile, text);
   }
 
   function addDailyReward(body) {
