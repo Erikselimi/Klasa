@@ -408,6 +408,20 @@
       border:1px solid var(--border);
       background:#fff;
     }
+    .queue-list {
+      display:grid;
+      gap:8px;
+      margin-top:12px;
+    }
+    .queue-row {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid var(--border);
+    }
 
     .animate-pop { animation: pop .45s ease; }
     .animate-win { animation: winGlow .6s ease; }
@@ -695,10 +709,17 @@
                   <p>Futu në radhë dhe vendos gurët me klikim në kolonë.</p>
                   <div class="composer" style="margin-top:10px;">
                     <div class="field">
-                      <label for="connect4Mode">Lloji i ndeshjes</label>
+                      <label for="connect4Mode">Oponenti</label>
                       <select id="connect4Mode">
-                        <option value="ranked">Ranked</option>
+                        <option value="bot">Bot</option>
+                        <option value="queue">Lojtarë në radhë</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="connect4Ranked">Lloji i ndeshjes</label>
+                      <select id="connect4Ranked">
                         <option value="casual">Casual</option>
+                        <option value="ranked">Ranked</option>
                       </select>
                     </div>
                     <div class="actions" style="margin-top:0;">
@@ -707,6 +728,7 @@
                     </div>
                     <div class="status-strip" id="connect4Status">Boardi ende s'ka lojtarë.</div>
                     <div id="connect4Board" class="connect4-board"></div>
+                    <div class="queue-list" id="connect4QueueList"></div>
                   </div>
                 </div>
               </div>
@@ -1027,6 +1049,7 @@
       history: [],
       matchQueue: [],
       connect4: null,
+      connect4Queue: [],
       blackjackSession: null,
       reports: [],
       creatorActive: false,
@@ -1146,6 +1169,7 @@
       if (!game) {
         $("#connect4Board").innerHTML = "";
         $("#connect4Status").textContent = "Boardi ende s'ka lojtarë.";
+        $("#connect4QueueList").innerHTML = "";
         return;
       }
       const seats = game.board || Array.from({ length: 6 }, () => Array(7).fill(null));
@@ -1160,8 +1184,12 @@
         ? game.winner === "draw"
           ? "Barazim në Connect 4."
           : `${game.winner === "red" ? game.redName || "Red" : game.yellowName || "Yellow"} fitoi Connect 4.`
-        : `Turni: ${game.turn === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow")}`;
+        : `Turni: ${game.turn === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow")} · ${game.mode === "bot" ? "vs Bot" : "radhë lojtarësh"}`;
       $("#connect4Status").textContent = status;
+      const queue = state.connect4Queue || [];
+      $("#connect4QueueList").innerHTML = queue.length
+        ? queue.map((entry) => `<div class="queue-row"><strong>${escapeHtml(entry.name || "Lojtar")}</strong><span class="note">po pret</span></div>`).join("")
+        : `<div class="queue-row"><strong>Radha</strong><span class="note">bosh</span></div>`;
     }
 
     function cardLabel(card) {
@@ -1401,6 +1429,7 @@
       state.history = data.history || [];
       state.matchQueue = data.matchQueue || [];
       state.connect4 = data.connect4 || null;
+      state.connect4Queue = data.connect4Queue || [];
       state.blackjackSession = data.blackjackSession || null;
       state.reports = data.reports || [];
       state.creatorActive = data.creatorActive || false;
@@ -1493,7 +1522,7 @@
     }
 
     async function sendChat() {
-      const me = state.me;
+      const me = currentMe();
       if (!me) {
         requireProfileNotice("Krijo profilin një herë për të përdorur chat-in.");
         return;
@@ -1668,10 +1697,11 @@
         requireProfileNotice("Krijo profilin një herë për Connect 4.");
         return;
       }
-      const ranked = $("#connect4Mode").value === "ranked";
+      const vs = $("#connect4Mode").value;
+      const ranked = $("#connect4Ranked").value === "ranked";
       const result = await api("/api/game/connect4/join", {
         method: "POST",
-        body: JSON.stringify({ clientId: getClientId(), ranked })
+        body: JSON.stringify({ clientId: getClientId(), ranked, vs })
       });
       $("#connect4Status").textContent = result.message;
       await loadState();
@@ -1702,6 +1732,7 @@
         requireProfileNotice("Krijo profilin një herë për Blackjack.");
         return;
       }
+      $("#blackjackStatus").textContent = "Duke nisur Blackjack...";
       const result = await api("/api/game/blackjack/start", {
         method: "POST",
         body: JSON.stringify({ clientId: getClientId(), bet: Number($("#blackjackBet").value || 0) })
@@ -1714,6 +1745,7 @@
 
     async function blackjackHit() {
       if (!currentMe()) return;
+      $("#blackjackStatus").textContent = "Po merr një kartë...";
       const result = await api("/api/game/blackjack/hit", {
         method: "POST",
         body: JSON.stringify({ clientId: getClientId() })
@@ -1726,6 +1758,7 @@
 
     async function blackjackStand() {
       if (!currentMe()) return;
+      $("#blackjackStatus").textContent = "Dealer po luan...";
       const result = await api("/api/game/blackjack/stand", {
         method: "POST",
         body: JSON.stringify({ clientId: getClientId() })
@@ -1785,13 +1818,13 @@
     $("#guessHeadsBtn").addEventListener("click", () => setCoinGuess("heads"));
     $("#guessTailsBtn").addEventListener("click", () => setCoinGuess("tails"));
     $("#flipCoinBtn").addEventListener("click", () => flipCoin().catch(alert));
-    $("#askAiBtn").addEventListener("click", () => sendAi().catch(alert));
-    $("#sendReportBtn").addEventListener("click", () => sendReport().catch(alert));
-    $("#connect4JoinBtn").addEventListener("click", () => connect4Join().catch(alert));
-    $("#connect4ResetBtn").addEventListener("click", () => connect4Reset().catch(alert));
-    $("#blackjackStartBtn").addEventListener("click", () => blackjackStart().catch(alert));
-    $("#blackjackHitBtn").addEventListener("click", () => blackjackHit().catch(alert));
-    $("#blackjackStandBtn").addEventListener("click", () => blackjackStand().catch(alert));
+    $("#askAiBtn").addEventListener("click", () => sendAi().catch((err) => { $("#aiReply").textContent = err.message; }));
+    $("#sendReportBtn").addEventListener("click", () => sendReport().catch((err) => { $("#reportHint").textContent = err.message; }));
+    $("#connect4JoinBtn").addEventListener("click", () => connect4Join().catch((err) => { $("#connect4Status").textContent = err.message; }));
+    $("#connect4ResetBtn").addEventListener("click", () => connect4Reset().catch((err) => { $("#connect4Status").textContent = err.message; }));
+    $("#blackjackStartBtn").addEventListener("click", () => blackjackStart().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
+    $("#blackjackHitBtn").addEventListener("click", () => blackjackHit().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
+    $("#blackjackStandBtn").addEventListener("click", () => blackjackStand().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
     $("#addMoneyBtn").addEventListener("click", () => addMoney().catch(alert));
     $("#clearHistoryBtn").addEventListener("click", () => clearMiniHistory().catch(alert));
     $("#clearReportsBtn").addEventListener("click", () => clearReports().catch(alert));

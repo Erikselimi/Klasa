@@ -8,7 +8,7 @@ const { createClient } = require("@supabase/supabase-js");
 const PORT = Number(process.env.PORT || 3000);
 const CREATOR_PASSWORD = process.env.CREATOR_PASSWORD || "Erik2011";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "chat-latest";
 const ROOT = __dirname;
 const INDEX_FILE = path.join(ROOT, "index.html");
 
@@ -50,12 +50,143 @@ function defaultConnect4() {
     yellowId: null,
     redName: "",
     yellowName: "",
+    mode: "queue",
     turn: "red",
     winner: null,
     lastMoveAt: null,
     ranked: true,
     updatedAt: now()
   };
+}
+
+function connect4AvailableMoves(board) {
+  const moves = [];
+  for (let col = 0; col < 7; col += 1) {
+    if (!board[0][col]) moves.push(col);
+  }
+  return moves;
+}
+
+function connect4Drop(board, col, token) {
+  const next = board.map((row) => row.slice());
+  let row = -1;
+  for (let r = 5; r >= 0; r -= 1) {
+    if (!next[r][col]) {
+      next[r][col] = token;
+      row = r;
+      break;
+    }
+  }
+  return { board: next, row };
+}
+
+function connect4ScoreWindow(window, token) {
+  const other = token === "red" ? "yellow" : "red";
+  const tokenCount = window.filter((cell) => cell === token).length;
+  const otherCount = window.filter((cell) => cell === other).length;
+  const emptyCount = window.filter((cell) => !cell).length;
+  let score = 0;
+  if (tokenCount === 4) score += 100000;
+  else if (tokenCount === 3 && emptyCount === 1) score += 120;
+  else if (tokenCount === 2 && emptyCount === 2) score += 12;
+  if (otherCount === 3 && emptyCount === 1) score -= 140;
+  if (otherCount === 2 && emptyCount === 2) score -= 8;
+  return score;
+}
+
+function connect4Evaluate(board, token) {
+  const centerCol = board.map((row) => row[3]);
+  let score = centerCol.filter((cell) => cell === token).length * 18;
+  for (let row = 0; row < 6; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      score += connect4ScoreWindow([board[row][col], board[row][col + 1], board[row][col + 2], board[row][col + 3]], token);
+    }
+  }
+  for (let col = 0; col < 7; col += 1) {
+    for (let row = 0; row < 3; row += 1) {
+      score += connect4ScoreWindow([board[row][col], board[row + 1][col], board[row + 2][col], board[row + 3][col]], token);
+    }
+  }
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      score += connect4ScoreWindow([board[row][col], board[row + 1][col + 1], board[row + 2][col + 2], board[row + 3][col + 3]], token);
+    }
+  }
+  for (let row = 3; row < 6; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      score += connect4ScoreWindow([board[row][col], board[row - 1][col + 1], board[row - 2][col + 2], board[row - 3][col + 3]], token);
+    }
+  }
+  return score;
+}
+
+function connect4HasWinner(board, token) {
+  for (let row = 0; row < 6; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      if (board[row][col] !== token) continue;
+      const directions = [
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [1, -1]
+      ];
+      for (const [dr, dc] of directions) {
+        let count = 1;
+        let r = row + dr;
+        let c = col + dc;
+        while (r >= 0 && r < 6 && c >= 0 && c < 7 && board[r][c] === token) {
+          count += 1;
+          r += dr;
+          c += dc;
+        }
+        if (count >= 4) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function connect4Minimax(board, depth, alpha, beta, maximizing, token, opponent) {
+  const validMoves = connect4AvailableMoves(board);
+  const terminal = connect4HasWinner(board, token) || connect4HasWinner(board, opponent) || validMoves.length === 0;
+  if (depth === 0 || terminal) {
+    if (terminal) {
+      if (connect4HasWinner(board, token)) return { score: 1000000 };
+      if (connect4HasWinner(board, opponent)) return { score: -1000000 };
+      return { score: 0 };
+    }
+    return { score: connect4Evaluate(board, token) };
+  }
+
+  if (maximizing) {
+    let value = -Infinity;
+    let bestCol = validMoves[0];
+    for (const col of validMoves) {
+      const drop = connect4Drop(board, col, token);
+      const result = connect4Minimax(drop.board, depth - 1, alpha, beta, false, token, opponent);
+      if (result.score > value) {
+        value = result.score;
+        bestCol = col;
+      }
+      alpha = Math.max(alpha, value);
+      if (alpha >= beta) break;
+    }
+    return { score: value, col: bestCol };
+  }
+
+  let value = Infinity;
+  let bestCol = validMoves[0];
+  for (const col of validMoves) {
+    const drop = connect4Drop(board, col, opponent);
+    const result = connect4Minimax(drop.board, depth - 1, alpha, beta, true, token, opponent);
+    if (result.score < value) {
+      value = result.score;
+      bestCol = col;
+    }
+    beta = Math.min(beta, value);
+    if (alpha >= beta) break;
+  }
+  return { score: value, col: bestCol };
 }
 
 function normalizeConnect4(input) {
@@ -72,6 +203,7 @@ function normalizeConnect4(input) {
     turn: input?.turn === "yellow" ? "yellow" : "red",
     winner: input?.winner === "red" || input?.winner === "yellow" ? input.winner : null,
     lastMoveAt: input?.lastMoveAt || null,
+    mode: input?.mode === "bot" ? "bot" : "queue",
     ranked: input?.ranked !== false,
     updatedAt: input?.updatedAt || now()
   };
@@ -131,6 +263,7 @@ function defaultData() {
     ],
     history: [],
     matchQueue: [],
+    connect4Queue: [],
     reports: [],
     connect4: defaultConnect4(),
     blackjackSessions: defaultBlackjackSessions(),
@@ -161,6 +294,7 @@ function normalizeData(input) {
     chat: Array.isArray(input.chat) ? input.chat : fresh.chat,
     history: Array.isArray(input.history) ? input.history : fresh.history,
     matchQueue: Array.isArray(input.matchQueue) ? input.matchQueue : [],
+    connect4Queue: Array.isArray(input.connect4Queue) ? input.connect4Queue : [],
     reports: Array.isArray(input.reports) ? input.reports : fresh.reports,
     connect4: normalizeConnect4(input.connect4),
     blackjackSessions: typeof input.blackjackSessions === "object" && input.blackjackSessions ? input.blackjackSessions : fresh.blackjackSessions,
@@ -351,6 +485,7 @@ function makeState(data, req, adminSessions) {
     chat: data.chat,
     history: data.history,
     matchQueue: data.matchQueue || [],
+    connect4Queue: data.connect4Queue || [],
     connect4: data.connect4,
     reports: requireAdmin(req, adminSessions) ? data.reports : [],
     myTimeoutUntil: me?.timeoutUntil || null,
@@ -574,72 +709,6 @@ async function main() {
     };
   }
 
-  function beats(moveA, moveB) {
-    return (moveA === "rock" && moveB === "scissors")
-      || (moveA === "paper" && moveB === "rock")
-      || (moveA === "scissors" && moveB === "paper");
-  }
-
-  function doRpsDuel(body) {
-    const left = getProfile(data, body.leftId);
-    const right = getProfile(data, body.rightId);
-    if (!left || !right) throw new Error("Zgjidh dy lojtarë të vlefshëm.");
-    if (left.id === right.id) throw new Error("Zgjidh dy lojtarë të ndryshëm.");
-
-    const moveLeft = body.moveLeft === "paper" || body.moveLeft === "scissors" ? body.moveLeft : "rock";
-    const moveRight = body.moveRight === "paper" || body.moveRight === "scissors" ? body.moveRight : "rock";
-    const amount = Math.max(1, Number(body.amount || 0));
-    const leftMoney = moneyFor(left);
-    const rightMoney = moneyFor(right);
-    const pot = Math.min(amount, leftMoney, rightMoney);
-    if (pot <= 0) throw new Error("Nuk ka para të mjaftueshme për RPS.");
-
-    let winner = null;
-    let loser = null;
-    if (moveLeft !== moveRight) {
-      if (beats(moveLeft, moveRight)) {
-        winner = left;
-        loser = right;
-      } else {
-        winner = right;
-        loser = left;
-      }
-      winner.money = moneyFor(winner) + pot;
-      loser.money = Math.max(0, moneyFor(loser) - pot);
-      winner.updatedAt = now();
-      loser.updatedAt = now();
-      data.history.push({
-        createdAt: now(),
-        leftName: displayName(left),
-        rightName: displayName(right),
-        winnerName: displayName(winner),
-        amount: pot,
-        type: "rps"
-      });
-      return {
-        won: winner.id === left.id,
-        draw: false,
-        winnerName: displayName(winner),
-        message: `${displayName(left)} zgjodhi ${moveLeft}, ${displayName(right)} zgjodhi ${moveRight}. ${displayName(winner)} fitoi ${pot}$.`
-      };
-    }
-
-    data.history.push({
-      createdAt: now(),
-      leftName: displayName(left),
-      rightName: displayName(right),
-      winnerName: "Barazim",
-      amount: 0,
-      type: "rps"
-    });
-    return {
-      won: false,
-      draw: true,
-      winnerName: "Barazim",
-      message: `${displayName(left)} dhe ${displayName(right)} zgjodhën ${moveLeft}. U bë barazim.`
-    };
-  }
-
   function joinMatchQueue(body) {
     const profile = getProfile(data, body.clientId);
     if (!profile) throw new Error("Duhet profil për të kërkuar match.");
@@ -703,12 +772,63 @@ async function main() {
     return null;
   }
 
+  function connect4FinishGame(game, winnerSeat) {
+    game.winner = winnerSeat;
+    game.updatedAt = now();
+    const winnerProfile = winnerSeat === "red" ? getProfile(data, game.redId) : getProfile(data, game.yellowId);
+    const loserProfile = winnerSeat === "red" ? getProfile(data, game.yellowId) : getProfile(data, game.redId);
+    if (winnerProfile) {
+      winnerProfile.money = moneyFor(winnerProfile) + (game.ranked ? 25 : 15);
+      winnerProfile.updatedAt = now();
+    }
+    if (loserProfile && game.ranked && loserProfile.id) {
+      loserProfile.money = Math.max(0, moneyFor(loserProfile) - 5);
+      loserProfile.updatedAt = now();
+    }
+    data.history.push({
+      createdAt: now(),
+      leftName: game.redName || "Red",
+      rightName: game.yellowName || "Yellow",
+      winnerName: winnerSeat === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow"),
+      amount: game.ranked ? 25 : 15,
+      type: "connect4"
+    });
+  }
+
+  function connect4ApplyMove(game, seat, col) {
+    const drop = connect4Drop(game.board, col, seat);
+    if (drop.row === -1) throw new Error("Kolona është plot.");
+    game.board = drop.board;
+    game.turn = seat === "red" ? "yellow" : "red";
+    game.lastMoveAt = now();
+    game.updatedAt = now();
+    if (connect4HasWinner(game.board, seat)) {
+      connect4FinishGame(game, seat);
+      return { game, winner: seat, draw: false, message: `${seat === "red" ? game.redName : game.yellowName} fitoi Connect 4.` };
+    }
+    if (!connect4AvailableMoves(game.board).length) {
+      game.winner = "draw";
+      game.updatedAt = now();
+      data.history.push({
+        createdAt: now(),
+        leftName: game.redName || "Red",
+        rightName: game.yellowName || "Yellow",
+        winnerName: "Barazim",
+        amount: 0,
+        type: "connect4"
+      });
+      return { game, draw: true, message: "Boardi u mbush. Barazim." };
+    }
+    return { game, winner: null, draw: false, message: `U vendos gur në kolonën ${col + 1}.` };
+  }
+
   function connect4Reset() {
     const keepRanked = Boolean(data.connect4?.ranked);
     data.connect4 = {
       ...defaultConnect4(),
       ranked: keepRanked
     };
+    data.connect4Queue = [];
   }
 
   function connect4Join(body) {
@@ -719,24 +839,51 @@ async function main() {
     if (typeof body.ranked === "boolean") {
       game.ranked = body.ranked;
     }
-    if (game.redId === profile.id || game.yellowId === profile.id) {
-      return { ok: true, seat: connect4SeatFor(profile), game, message: "Je tashmë në lojë." };
-    }
-    if (!game.redId) {
+    const vs = body.vs === "bot" ? "bot" : "queue";
+    game.mode = vs;
+    if (vs === "bot") {
       game.redId = profile.id;
       game.redName = displayName(profile);
+      game.yellowId = "bot";
+      game.yellowName = "AI Bot";
+      game.turn = "red";
+      game.winner = null;
+      game.board = Array.from({ length: 6 }, () => Array(7).fill(null));
+      game.lastMoveAt = now();
       game.updatedAt = now();
       data.connect4 = game;
-      return { ok: true, seat: "red", game, message: `${displayName(profile)} hyri si Red.` };
+      return { ok: true, seat: "red", game, message: "Hyre kundër bot-it." };
     }
-    if (!game.yellowId) {
-      game.yellowId = profile.id;
-      game.yellowName = displayName(profile);
-      game.updatedAt = now();
-      data.connect4 = game;
-      return { ok: true, seat: "yellow", game, message: `${displayName(profile)} hyri si Yellow.` };
+
+    data.connect4Queue = (data.connect4Queue || []).filter((entry) => entry.clientId !== profile.id);
+    data.connect4Queue.push({
+      clientId: profile.id,
+      name: displayName(profile),
+      joinedAt: now()
+    });
+
+    if (data.connect4Queue.length >= 2) {
+      const first = data.connect4Queue.shift();
+      const second = data.connect4Queue.shift();
+      const left = getProfile(data, first.clientId);
+      const right = getProfile(data, second.clientId);
+      if (left && right) {
+        game.redId = left.id;
+        game.redName = displayName(left);
+        game.yellowId = right.id;
+        game.yellowName = displayName(right);
+        game.turn = "red";
+        game.winner = null;
+        game.board = Array.from({ length: 6 }, () => Array(7).fill(null));
+        game.mode = "queue";
+        game.lastMoveAt = now();
+        game.updatedAt = now();
+        data.connect4 = game;
+        return { ok: true, seat: connect4SeatFor(profile), game, message: `Match u krijua: ${game.redName} kundër ${game.yellowName}.` };
+      }
     }
-    throw new Error("Connect 4 është plot. Prit ose hiq një lojtar.");
+    data.connect4 = game;
+    return { ok: true, seat: null, game, waiting: true, message: `${displayName(profile)} hyri në radhë për Connect 4.` };
   }
 
   function connect4Winner(board, row, col, token) {
@@ -772,61 +919,23 @@ async function main() {
     if (!seat) throw new Error("Futu në Connect 4 si lojtar.");
     if (game.turn !== seat) throw new Error("Nuk është radha jote.");
     const col = Math.max(0, Math.min(6, Number(body.column)));
-    let row = -1;
-    for (let r = 5; r >= 0; r -= 1) {
-      if (!game.board[r][col]) {
-        row = r;
-        break;
-      }
-    }
-    if (row === -1) throw new Error("Kolona është plot.");
-    game.board[row][col] = seat;
-    game.turn = seat === "red" ? "yellow" : "red";
-    game.lastMoveAt = now();
-    game.updatedAt = now();
-
-    const won = connect4Winner(game.board, row, col, seat);
-    const filled = game.board.every((r) => r.every(Boolean));
-    if (won) {
-      game.winner = seat;
-      const winnerProfile = seat === "red" ? getProfile(data, game.redId) : getProfile(data, game.yellowId);
-      const loserProfile = seat === "red" ? getProfile(data, game.yellowId) : getProfile(data, game.redId);
-      if (winnerProfile) {
-        winnerProfile.money = moneyFor(winnerProfile) + (game.ranked ? 25 : 15);
-        winnerProfile.updatedAt = now();
-      }
-      if (loserProfile && game.ranked) {
-        loserProfile.money = Math.max(0, moneyFor(loserProfile) - 5);
-        loserProfile.updatedAt = now();
-      }
-      data.history.push({
-        createdAt: now(),
-        leftName: game.redName || "Red",
-        rightName: game.yellowName || "Yellow",
-        winnerName: seat === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow"),
-        amount: game.ranked ? 25 : 15,
-        type: "connect4"
-      });
+    const result = connect4ApplyMove(game, seat, col);
+    if (result.winner || result.draw) {
       data.connect4 = game;
-      return { ok: true, winner: seat, message: `${seat === "red" ? game.redName : game.yellowName} fitoi Connect 4.`, game };
+      return { ok: true, ...result, game };
     }
 
-    if (filled) {
-      game.winner = "draw";
-      data.history.push({
-        createdAt: now(),
-        leftName: game.redName || "Red",
-        rightName: game.yellowName || "Yellow",
-        winnerName: "Barazim",
-        amount: 0,
-        type: "connect4"
-      });
+    if (game.mode === "bot" && game.turn === "yellow") {
+      const bot = connect4Minimax(game.board, 5, -Infinity, Infinity, true, "yellow", "red");
+      const botMove = typeof bot.col === "number" ? bot.col : connect4AvailableMoves(game.board)[0];
+      const botResult = connect4ApplyMove(game, "yellow", botMove);
       data.connect4 = game;
-      return { ok: true, draw: true, message: "Boardi u mbush. Barazim.", game };
+      if (botResult.winner || botResult.draw) return { ok: true, ...botResult, game };
+      return { ok: true, ...result, message: `${result.message} Bot-i luajti kolonën ${botMove + 1}.`, game };
     }
 
     data.connect4 = game;
-    return { ok: true, message: `U vendos gur në kolonën ${col + 1}.`, game };
+    return { ok: true, ...result, game };
   }
 
   function blackjackDeck() {
@@ -1007,36 +1116,67 @@ async function main() {
       };
     }
 
-    const payload = {
-      model: OPENAI_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta. Mos jep këshilla për mashtrim, urrejtje, ose gjëra të dëmshme."
+    const systemPrompt = "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta. Mos jep këshilla për mashtrim, urrejtje, ose gjëra të dëmshme.";
+    const userPrompt = `Profili: ${displayName(profile)}. Pyetja: ${text}`;
+
+    const callChatCompletions = async () => {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`
         },
-        {
-          role: "user",
-          content: `Profili: ${displayName(profile)}. Pyetja: ${text}`
-        }
-      ],
-      temperature: 0.7
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 300
+        })
+      });
+      if (!response.ok) throw new Error(await response.text() || `OpenAI HTTP ${response.status}`);
+      const json = await response.json();
+      const reply = json?.choices?.[0]?.message?.content?.trim();
+      if (!reply) throw new Error("Nuk mora përgjigje nga AI.");
+      return { reply, usage: "chat-completions" };
     };
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      const textBody = await response.text();
-      throw new Error(textBody || `OpenAI HTTP ${response.status}`);
+    const callResponses = async () => {
+      const response = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          input: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_output_tokens: 300
+        })
+      });
+      if (!response.ok) throw new Error(await response.text() || `OpenAI HTTP ${response.status}`);
+      const json = await response.json();
+      const reply = String(json?.output_text || "").trim()
+        || String(json?.output?.flatMap((item) => item?.content || []).map((part) => part?.text || "").join("")).trim();
+      if (!reply) throw new Error("Nuk mora përgjigje nga AI.");
+      return { reply, usage: "responses" };
+    };
+
+    try {
+      return await callChatCompletions();
+    } catch (chatError) {
+      try {
+        return await callResponses();
+      } catch (responsesError) {
+        throw new Error(`AI dështoi: ${String(responsesError?.message || chatError?.message || responsesError)}`);
+      }
     }
-    const json = await response.json();
-    const reply = json?.choices?.[0]?.message?.content?.trim() || "Nuk mora përgjigje nga AI.";
-    return { reply, usage: "online" };
   }
 
   function addDailyReward(body) {
