@@ -328,6 +328,87 @@
       100% { transform: rotateY(1440deg) scale(1); }
     }
 
+    .connect4-wrap { display:grid; gap:14px; }
+    .connect4-board {
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap:8px;
+      padding:14px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(20,83,45,.08), rgba(15,118,110,.04));
+      border:1px solid var(--border);
+    }
+    .connect4-cell, .connect4-col {
+      aspect-ratio:1;
+      border-radius:50%;
+      border:1px solid rgba(19,33,42,.08);
+      display:grid;
+      place-items:center;
+      font-weight:900;
+    }
+    .connect4-cell {
+      background:#f8fbf9;
+      color:transparent;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+    }
+    .connect4-cell.red { background: radial-gradient(circle at 35% 35%, #ff8d8d, #cd1f1f); color:transparent; }
+    .connect4-cell.yellow { background: radial-gradient(circle at 35% 35%, #fff0a8, #f0b400); color:transparent; }
+    .connect4-col {
+      cursor:pointer;
+      background: rgba(255,255,255,.84);
+      color: var(--primary);
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .connect4-col:hover { transform: translateY(-1px); background:#fff; border-color: rgba(20,83,45,.35); }
+
+    .blackjack-table {
+      display:grid;
+      gap:12px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, #fff, #f8fbf9);
+    }
+    .card-row { display:flex; flex-wrap:wrap; gap:8px; }
+    .playing-card {
+      min-width:52px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-weight:900;
+      text-align:center;
+      box-shadow: 0 8px 16px rgba(18,33,43,.05);
+    }
+
+    .ai-shell {
+      display:grid;
+      gap:14px;
+      padding:18px;
+      border-radius:18px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(20,83,45,.05), rgba(15,118,110,.03));
+    }
+    .ai-reply {
+      min-height:90px;
+      padding:14px;
+      border-radius:16px;
+      background:#fff;
+      border:1px solid var(--border);
+      color:var(--text);
+    }
+    .report-list {
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+    .report-item {
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+
     .animate-pop { animation: pop .45s ease; }
     .animate-win { animation: winGlow .6s ease; }
     .animate-loss { animation: lossGlow .6s ease; }
@@ -363,7 +444,6 @@
         <a href="#shop">Store</a>
         <a href="#games">Lojërat</a>
         <a href="#biseda">Biseda</a>
-        <button id="openCreatorBtn" type="button">Krijuesi</button>
       </nav>
     </div>
   </header>
@@ -386,6 +466,7 @@
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="heroSignupBtn" type="button">Hap signup</button>
+          <button class="btn btn-secondary" id="dailyRewardBtn" type="button">Merr reward ditor</button>
           <button class="btn btn-secondary" id="refreshBtn" type="button">Rifresko</button>
           <button class="btn btn-danger" id="resetLocalBtn" type="button">Fshi profilin tim</button>
         </div>
@@ -493,7 +574,7 @@
         <div class="section-head">
           <div>
             <h2>Mini-games arena</h2>
-            <p class="section-lead">Këtu është pjesa konkurruese: bete, duele, matchmaking, dhe lojëra të shkurtra me ritëm të shpejtë.</p>
+            <p class="section-lead">Këtu është pjesa konkurruese: bete, duele, matchmaking, lojëra të shkurtra, AI chat, dhe mjetet e klasës.</p>
           </div>
           <span class="badge" id="gameBadge">Gati për match</span>
         </div>
@@ -579,13 +660,13 @@
           </details>
 
           <details class="game-accordion">
-            <summary class="game-summary">Mini lojëra <span>Monedha reale dhe Rock Paper Scissors</span></summary>
+            <summary class="game-summary">Mini lojëra <span>Monedha, Connect 4 dhe Blackjack</span></summary>
             <div class="game-panel">
-              <div class="grid-2">
-                <div class="mini-card soft">
+              <div class="game-shell">
+                <div class="game-stage">
                   <h3>Monedha reale</h3>
                   <p>Zgjidh anën, shëno shumën dhe hidhe me animacion.</p>
-                  <div class="composer" style="margin-top:14px;">
+                  <div class="composer" style="margin-top:10px;">
                     <div class="field">
                       <label for="coinPlayer">Lojtari</label>
                       <select id="coinPlayer"></select>
@@ -609,48 +690,80 @@
                   <p id="coinResult" class="note" style="margin-top:12px;">Rezultati i monedhës shfaqet këtu.</p>
                 </div>
 
-                <div class="mini-card soft">
-                  <h3>Rock Paper Scissors</h3>
-                  <p>Një mini-lojë tjetër 1v1 me zgjedhje dhe fitues të qartë.</p>
-                  <div class="composer" style="margin-top:14px;">
-                    <div class="grid-2">
-                      <div class="field">
-                        <label for="rpsA">Lojtari 1</label>
-                        <select id="rpsA"></select>
-                      </div>
-                      <div class="field">
-                        <label for="rpsB">Lojtari 2</label>
-                        <select id="rpsB"></select>
-                      </div>
-                    </div>
-                    <div class="grid-2">
-                      <div class="field">
-                        <label for="rpsMoveA">Zgjedhja 1</label>
-                        <select id="rpsMoveA">
-                          <option value="rock">Gur</option>
-                          <option value="paper">Letër</option>
-                          <option value="scissors">Gërshërë</option>
-                        </select>
-                      </div>
-                      <div class="field">
-                        <label for="rpsMoveB">Zgjedhja 2</label>
-                        <select id="rpsMoveB">
-                          <option value="rock">Gur</option>
-                          <option value="paper">Letër</option>
-                          <option value="scissors">Gërshërë</option>
-                        </select>
-                      </div>
-                    </div>
+                <div class="game-stage">
+                  <h3>Connect 4</h3>
+                  <p>Futu në radhë dhe vendos gurët me klikim në kolonë.</p>
+                  <div class="composer" style="margin-top:10px;">
                     <div class="field">
-                      <label for="rpsStake">Beti</label>
-                      <input id="rpsStake" type="number" min="1" step="1" value="10" />
+                      <label for="connect4Mode">Lloji i ndeshjes</label>
+                      <select id="connect4Mode">
+                        <option value="ranked">Ranked</option>
+                        <option value="casual">Casual</option>
+                      </select>
                     </div>
                     <div class="actions" style="margin-top:0;">
-                      <button class="btn btn-primary" id="startRpsBtn" type="button">Luaj RPS</button>
+                      <button class="btn btn-primary" id="connect4JoinBtn" type="button">Hyj në board</button>
+                      <button class="btn btn-secondary" id="connect4ResetBtn" type="button">Reset board</button>
                     </div>
+                    <div class="status-strip" id="connect4Status">Boardi ende s'ka lojtarë.</div>
+                    <div id="connect4Board" class="connect4-board"></div>
                   </div>
-                  <p id="rpsStatus" class="note" style="margin-top:12px;">Zgjidh dy lojtarë dhe një bet.</p>
-                  <p id="rpsResult" class="note" style="margin-top:8px;">Rezultati i RPS shfaqet këtu.</p>
+                </div>
+              </div>
+
+              <div style="height:16px"></div>
+              <div class="game-shell">
+                <div class="game-stage">
+                  <h3>Blackjack</h3>
+                  <p>Një lojë solo me risk, zgjedh betin dhe vendos kur të ndalesh.</p>
+                  <div class="composer" style="margin-top:10px;">
+                    <div class="field">
+                      <label for="blackjackBet">Beti</label>
+                      <input id="blackjackBet" type="number" min="1" step="1" value="10" />
+                    </div>
+                    <div class="actions" style="margin-top:0;">
+                      <button class="btn btn-primary" id="blackjackStartBtn" type="button">Fillo</button>
+                      <button class="btn btn-secondary" id="blackjackHitBtn" type="button">Hit</button>
+                      <button class="btn btn-secondary" id="blackjackStandBtn" type="button">Stand</button>
+                    </div>
+                    <div class="blackjack-table">
+                      <div>
+                        <strong>Dealer</strong>
+                        <div id="blackjackDealerCards" class="card-row"></div>
+                        <div class="note" id="blackjackDealerInfo">Dealer total: -</div>
+                      </div>
+                      <div>
+                        <strong>Ti</strong>
+                        <div id="blackjackPlayerCards" class="card-row"></div>
+                        <div class="note" id="blackjackPlayerInfo">Player total: -</div>
+                      </div>
+                    </div>
+                    <div class="status-strip" id="blackjackStatus">Nis një lojë për të parë kartat.</div>
+                  </div>
+                </div>
+
+                <div class="game-stage">
+                  <h3>AI & raporte</h3>
+                  <p>Pyet AI-në dhe raporto bug-e nga i njëjti vend.</p>
+                  <div class="ai-shell">
+                    <div class="field">
+                      <label for="aiPrompt">Mesazhi për AI</label>
+                      <textarea id="aiPrompt" placeholder="Pyet për lojërat, orarin, ose ndihmë për klasën..."></textarea>
+                    </div>
+                    <div class="actions" style="margin-top:0;">
+                      <button class="btn btn-primary" id="askAiBtn" type="button">Dërgo në AI</button>
+                    </div>
+                    <div class="ai-reply" id="aiReply">Përgjigjja e AI-së shfaqet këtu.</div>
+                    <hr style="width:100%; border:none; border-top:1px solid var(--border); margin:4px 0;">
+                    <div class="field">
+                      <label for="reportText">Raporto bug</label>
+                      <textarea id="reportText" placeholder="Shkruaj çfarë nuk po funksionon..."></textarea>
+                    </div>
+                    <div class="actions" style="margin-top:0;">
+                      <button class="btn btn-secondary" id="sendReportBtn" type="button">Dërgo raport</button>
+                    </div>
+                    <p class="note" id="reportHint">Raportet i sheh vetëm krijuesi.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -717,7 +830,7 @@
           <div id="chatFeed" class="feed" aria-live="polite"></div>
           <div class="card" style="padding:18px; background: rgba(255,255,255,.7); border-radius:18px;">
             <div class="composer">
-              <div class="note" id="chatHint">Hape signup-in që të përdorësh emrin tënd në chat.</div>
+              <div class="note" id="chatHint">Krijo profilin një herë për të përdorur chat-in.</div>
               <div class="field">
                 <label for="chatMessage">Mesazhi</label>
                 <textarea id="chatMessage" placeholder="Shkruaj diçka për klasën..."></textarea>
@@ -815,6 +928,34 @@
             <button class="btn btn-secondary" data-point="project" type="button">+ Projekt</button>
           </div>
         </div>
+
+        <div style="height:18px"></div>
+        <div class="mini-card">
+          <h3>Menaxhim parash</h3>
+          <p class="note" style="margin-bottom:12px;">Shto para manualisht për ndihmë ose testim.</p>
+          <div class="grid-2">
+            <div class="field">
+              <label for="manualMoneyStudent">Anëtari</label>
+              <select id="manualMoneyStudent"></select>
+            </div>
+            <div class="field">
+              <label for="manualMoneyAmount">Shuma</label>
+              <input id="manualMoneyAmount" type="number" min="1" step="1" value="10">
+            </div>
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn btn-primary" id="addMoneyBtn" type="button">Shto para</button>
+            <button class="btn btn-secondary" id="clearHistoryBtn" type="button">Pastro mini-game history</button>
+            <button class="btn btn-danger" id="clearReportsBtn" type="button">Pastro raportet</button>
+          </div>
+        </div>
+
+        <div style="height:18px"></div>
+        <div class="mini-card">
+          <h3>Raportet e bug-eve</h3>
+          <p class="note" style="margin-bottom:12px;">Shfaqen vetëm për krijuesin.</p>
+          <div id="reportList" class="report-list"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -885,8 +1026,13 @@
       shop: [],
       history: [],
       matchQueue: [],
+      connect4: null,
+      blackjackSession: null,
+      reports: [],
       creatorActive: false,
       coinGuess: "heads",
+      myTimeoutUntil: null,
+      myTimeoutReason: "",
       lastGameMessage: "",
       lastDuelMessage: ""
     };
@@ -990,6 +1136,69 @@
       return "Bronze";
     }
 
+    function requireProfileNotice(message) {
+      $("#gameBadge").textContent = message;
+      $("#chatHint").textContent = message;
+      $("#statusInfo").textContent = message;
+    }
+
+    function renderConnect4Board(game) {
+      if (!game) {
+        $("#connect4Board").innerHTML = "";
+        $("#connect4Status").textContent = "Boardi ende s'ka lojtarë.";
+        return;
+      }
+      const seats = game.board || Array.from({ length: 6 }, () => Array(7).fill(null));
+      const topRow = Array.from({ length: 7 }, (_, col) => `
+        <button class="connect4-col" data-connect4-col="${col}" type="button">${col + 1}</button>
+      `).join("");
+      const cells = seats.map((row) => row.map((cell) => `
+        <div class="connect4-cell ${cell || ""}">${cell ? "●" : "&nbsp;"}</div>
+      `).join("")).join("");
+      $("#connect4Board").innerHTML = `${topRow}${cells}`;
+      const status = game.winner
+        ? game.winner === "draw"
+          ? "Barazim në Connect 4."
+          : `${game.winner === "red" ? game.redName || "Red" : game.yellowName || "Yellow"} fitoi Connect 4.`
+        : `Turni: ${game.turn === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow")}`;
+      $("#connect4Status").textContent = status;
+    }
+
+    function cardLabel(card) {
+      if (!card) return "??";
+      return `${card.rank}${card.suit}`;
+    }
+
+    function renderBlackjack(session) {
+      if (!session) {
+        $("#blackjackDealerCards").innerHTML = "";
+        $("#blackjackPlayerCards").innerHTML = "";
+        $("#blackjackDealerInfo").textContent = "Dealer total: -";
+        $("#blackjackPlayerInfo").textContent = "Player total: -";
+        $("#blackjackStatus").textContent = "Nis një lojë për të parë kartat.";
+        return;
+      }
+      const playerCards = (session.playerCards || []).map((card) => `<span class="playing-card">${escapeHtml(cardLabel(card))}</span>`).join("");
+      const dealerCards = (session.dealerCards || []).map((card, index) => `<span class="playing-card">${escapeHtml(session.revealDealer || index === 0 ? cardLabel(card) : "??")}</span>`).join("");
+      $("#blackjackDealerCards").innerHTML = dealerCards;
+      $("#blackjackPlayerCards").innerHTML = playerCards;
+      $("#blackjackDealerInfo").textContent = `Dealer total: ${session.revealDealer ? session.dealerTotal : "?"}`;
+      $("#blackjackPlayerInfo").textContent = `Player total: ${session.playerTotal}`;
+      $("#blackjackStatus").textContent = session.message || session.status || "Blackjack aktiv.";
+    }
+
+    function renderReports(reports) {
+      $("#reportList").innerHTML = reports.length
+        ? reports.map((report) => `
+            <div class="report-item">
+              <strong>${escapeHtml(report.reporterName || "Anonymous")}</strong>
+              <div class="note" style="margin-top:4px;">${escapeHtml(report.text || "")}</div>
+              <div class="note" style="margin-top:6px;">${new Date(report.createdAt).toLocaleString("sq-AL")} · ${escapeHtml(report.status || "open")}</div>
+            </div>
+          `).join("")
+        : `<div class="report-item"><div class="note">Nuk ka raporte ende.</div></div>`;
+    }
+
     function render() {
       const me = currentMe();
       const totalCoins = state.profiles.reduce((sum, p) => sum + moneyFor(p), 0);
@@ -1010,8 +1219,8 @@
       $("#matchState").textContent = queueCount ? `${queueCount} lojtarë në radhë.` : "Askush nuk është në radhë.";
       $("#moneyTotalBadge").textContent = `Totali: ${totalCoins}$`;
       $("#shopBadge").textContent = `Të dhëna: ${state.shop.length} artikuj`;
-      $("#gameBadge").textContent = me ? "Gati për match" : "Hap signup për të luajtur";
-      $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Hape signup-in që të përdorësh emrin tënd në chat.";
+      $("#gameBadge").textContent = me ? "Gati për match" : "Krijo profilin një herë për të luajtur";
+      $("#chatHint").textContent = me ? `Po poston si ${profileDisplay(me)}.` : "Krijo profilin një herë për të përdorur chat-in.";
       $("#rankTitle").textContent = me ? `${rankTier} ${mePoints >= 100 ? "I" : mePoints >= 70 ? "II" : mePoints >= 40 ? "III" : ""}`.trim() : "Bronze I";
       $("#rankSummary").textContent = me ? `Rangu bazohet te pikët e tua dhe aktiviteti i klasës.` : "Regjistrohu për të parë rankun tënd.";
       $("#rankPoints").textContent = `${mePoints} pikë`;
@@ -1093,18 +1302,13 @@
       $("#duelA").innerHTML = options;
       $("#duelB").innerHTML = options;
       $("#coinPlayer").innerHTML = options;
-      $("#rpsA").innerHTML = options;
-      $("#rpsB").innerHTML = options;
       if (players[0]) {
         $("#betPlayer").value = players[0].id;
         $("#duelA").value = players[0].id;
         $("#coinPlayer").value = players[0].id;
-        $("#rpsA").value = players[0].id;
       }
       if (players[1]) $("#duelB").value = players[1].id;
       else if (players[0]) $("#duelB").value = players[0].id;
-      if (players[1]) $("#rpsB").value = players[1].id;
-      else if (players[0]) $("#rpsB").value = players[0].id;
 
       $("#matchQueueBody").innerHTML = state.matchQueue.length
         ? state.matchQueue.map((entry) => `
@@ -1137,6 +1341,10 @@
         </tr>
       `).join("");
 
+      renderConnect4Board(state.connect4);
+      renderBlackjack(state.blackjackSession);
+      renderReports(state.creatorActive ? (state.reports || []) : []);
+
       $("#chatFeed").innerHTML = state.chat.slice().reverse().map((m) => {
         if (m.type === "system") {
           return `<div class="message system"><div>${escapeHtml(m.text)}</div></div>`;
@@ -1156,9 +1364,11 @@
       }).join("");
 
       $("#studentSelect").innerHTML = rosterProfiles().map((p) => `<option value="${p.id}">${escapeHtml(profileDisplay(p))}</option>`).join("");
+      $("#manualMoneyStudent").innerHTML = rosterProfiles().map((p) => `<option value="${p.id}">${escapeHtml(profileDisplay(p))}</option>`).join("");
       const selected = rosterProfiles()[0];
       if (selected) {
         $("#studentSelect").value = selected.id;
+        $("#manualMoneyStudent").value = selected.id;
         $("#editFirstName").value = selected.firstName || "";
         $("#editLastName").value = selected.lastName || "";
         $("#editNickname").value = selected.nickname || "";
@@ -1190,7 +1400,12 @@
       state.shop = data.shop || [];
       state.history = data.history || [];
       state.matchQueue = data.matchQueue || [];
+      state.connect4 = data.connect4 || null;
+      state.blackjackSession = data.blackjackSession || null;
+      state.reports = data.reports || [];
       state.creatorActive = data.creatorActive || false;
+      state.myTimeoutUntil = data.myTimeoutUntil || null;
+      state.myTimeoutReason = data.myTimeoutReason || "";
       render();
       $("#statusInfo").textContent = "Online";
     }
@@ -1280,7 +1495,7 @@
     async function sendChat() {
       const me = state.me;
       if (!me) {
-        openModal($("#signupModal"));
+        requireProfileNotice("Krijo profilin një herë për të përdorur chat-in.");
         return;
       }
       const imageFile = $("#chatImage").files?.[0];
@@ -1311,6 +1526,10 @@
     }
 
     async function playBet(mode) {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për të luajtur.");
+        return;
+      }
       const playerId = $("#betPlayer").value;
       const amount = Number($("#betAmount").value || 0);
       const result = await api("/api/game/bet", { method: "POST", body: JSON.stringify({ clientId: getClientId(), playerId, amount, mode }) });
@@ -1320,6 +1539,10 @@
     }
 
     async function startDuel() {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për të luajtur.");
+        return;
+      }
       const result = await api("/api/game/duel", {
         method: "POST",
         body: JSON.stringify({
@@ -1336,7 +1559,7 @@
 
     async function joinMatchQueue() {
       if (!currentMe()) {
-        openModal($("#signupModal"));
+        requireProfileNotice("Krijo profilin një herë për t'u futur në match.");
         return;
       }
       const result = await api("/api/game/match/join", {
@@ -1362,7 +1585,7 @@
 
     async function flipCoin() {
       if (!currentMe()) {
-        openModal($("#signupModal"));
+        requireProfileNotice("Krijo profilin një herë për të luajtur.");
         return;
       }
       const playerId = $("#coinPlayer").value;
@@ -1389,31 +1612,157 @@
       await loadState();
     }
 
-    async function playRps() {
+    async function sendAi() {
       if (!currentMe()) {
-        openModal($("#signupModal"));
+        requireProfileNotice("Krijo profilin një herë për të folur me AI.");
         return;
       }
-      const result = await api("/api/game/rps", {
+      const text = $("#aiPrompt").value.trim();
+      if (!text) {
+        $("#aiReply").textContent = "Shkruaj diçka për AI.";
+        return;
+      }
+      $("#aiReply").textContent = "AI po mendon...";
+      const result = await api("/api/ai/chat", {
         method: "POST",
         body: JSON.stringify({
           clientId: getClientId(),
-          leftId: $("#rpsA").value,
-          rightId: $("#rpsB").value,
-          moveLeft: $("#rpsMoveA").value,
-          moveRight: $("#rpsMoveB").value,
-          amount: Number($("#rpsStake").value || 0)
+          text
         })
       });
-      $("#rpsStatus").textContent = result.draw ? "Barazim." : (result.winnerName || "Loja mbaroi.");
-      $("#rpsResult").textContent = result.message;
-      setBubble($("#rpsResult"), result.draw ? "" : (result.won ? "win" : "loss"));
+      $("#aiReply").textContent = result.reply || "Nuk mora përgjigje.";
+      $("#aiPrompt").value = "";
+      await loadState();
+    }
+
+    async function sendReport() {
+      const text = $("#reportText").value.trim();
+      if (!text) {
+        alert("Shkruaj një bug para se ta raportosh.");
+        return;
+      }
+      await api("/api/report", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId(), text })
+      });
+      $("#reportText").value = "";
+      await loadState();
+      alert("Raporti u dërgua.");
+    }
+
+    async function dailyReward() {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për reward ditor.");
+        return;
+      }
+      const result = await api("/api/rewards/daily", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      alert(result.message);
+      await loadState();
+    }
+
+    async function connect4Join() {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për Connect 4.");
+        return;
+      }
+      const ranked = $("#connect4Mode").value === "ranked";
+      const result = await api("/api/game/connect4/join", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId(), ranked })
+      });
+      $("#connect4Status").textContent = result.message;
+      await loadState();
+    }
+
+    async function connect4Move(col) {
+      if (!currentMe()) return;
+      const result = await api("/api/game/connect4/move", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId(), column: col })
+      });
+      $("#connect4Status").textContent = result.message;
+      await loadState();
+    }
+
+    async function connect4Reset() {
+      if (!currentMe()) return;
+      const result = await api("/api/game/connect4/reset", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      $("#connect4Status").textContent = result.game ? "Boardi u resetua." : "Boardi u resetua.";
+      await loadState();
+    }
+
+    async function blackjackStart() {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për Blackjack.");
+        return;
+      }
+      const result = await api("/api/game/blackjack/start", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId(), bet: Number($("#blackjackBet").value || 0) })
+      });
+      state.blackjackSession = result.state || null;
+      $("#blackjackStatus").textContent = result.message;
+      renderBlackjack(result.state || null);
+      await loadState();
+    }
+
+    async function blackjackHit() {
+      if (!currentMe()) return;
+      const result = await api("/api/game/blackjack/hit", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      state.blackjackSession = result.state || null;
+      $("#blackjackStatus").textContent = result.message;
+      renderBlackjack(result.state || null);
+      await loadState();
+    }
+
+    async function blackjackStand() {
+      if (!currentMe()) return;
+      const result = await api("/api/game/blackjack/stand", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      state.blackjackSession = result.state || null;
+      $("#blackjackStatus").textContent = result.message;
+      renderBlackjack(result.state || null);
+      await loadState();
+    }
+
+    async function addMoney() {
+      if (!state.creatorActive) return;
+      await api("/api/admin/money", {
+        method: "POST",
+        headers: tokenHeaders(),
+        body: JSON.stringify({
+          id: $("#manualMoneyStudent").value,
+          amount: Number($("#manualMoneyAmount").value || 0)
+        })
+      });
+      await loadState();
+    }
+
+    async function clearMiniHistory() {
+      if (!state.creatorActive) return;
+      await api("/api/admin/history/clear", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({}) });
+      await loadState();
+    }
+
+    async function clearReports() {
+      if (!state.creatorActive) return;
+      await api("/api/admin/reports/clear", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({}) });
       await loadState();
     }
 
     $("#openSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
     $("#heroSignupBtn").addEventListener("click", () => openModal($("#signupModal")));
-    $("#openCreatorBtn").addEventListener("click", () => openModal($("#creatorModal")));
     $("#closeSignupBtn").addEventListener("click", () => closeModal($("#signupModal")));
     $("#closeCreatorBtn").addEventListener("click", () => closeModal($("#creatorModal")));
     $("#signupModal").addEventListener("click", (e) => { if (e.target === $("#signupModal")) closeModal($("#signupModal")); });
@@ -1424,6 +1773,7 @@
     $("#creatorLoginModalBtn").addEventListener("click", () => creatorLogin().catch((err) => alert(err.message)));
     $("#creatorLogoutBtn").addEventListener("click", () => creatorLogout().catch((err) => alert(err.message)));
     $("#refreshBtn").addEventListener("click", () => loadState().catch((err) => $("#statusInfo").textContent = err.message));
+    $("#dailyRewardBtn").addEventListener("click", () => dailyReward().catch(alert));
     $("#resetLocalBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE.clientId); location.reload(); });
     $("#sendChatBtn").addEventListener("click", () => sendChat().catch(alert));
     $("#clearChatBtn").addEventListener("click", async () => { await api("/api/chat/clear", { method: "POST", headers: tokenHeaders(), body: JSON.stringify({}) }); await loadState(); });
@@ -1435,11 +1785,32 @@
     $("#guessHeadsBtn").addEventListener("click", () => setCoinGuess("heads"));
     $("#guessTailsBtn").addEventListener("click", () => setCoinGuess("tails"));
     $("#flipCoinBtn").addEventListener("click", () => flipCoin().catch(alert));
-    $("#startRpsBtn").addEventListener("click", () => playRps().catch(alert));
+    $("#askAiBtn").addEventListener("click", () => sendAi().catch(alert));
+    $("#sendReportBtn").addEventListener("click", () => sendReport().catch(alert));
+    $("#connect4JoinBtn").addEventListener("click", () => connect4Join().catch(alert));
+    $("#connect4ResetBtn").addEventListener("click", () => connect4Reset().catch(alert));
+    $("#blackjackStartBtn").addEventListener("click", () => blackjackStart().catch(alert));
+    $("#blackjackHitBtn").addEventListener("click", () => blackjackHit().catch(alert));
+    $("#blackjackStandBtn").addEventListener("click", () => blackjackStand().catch(alert));
+    $("#addMoneyBtn").addEventListener("click", () => addMoney().catch(alert));
+    $("#clearHistoryBtn").addEventListener("click", () => clearMiniHistory().catch(alert));
+    $("#clearReportsBtn").addEventListener("click", () => clearReports().catch(alert));
     $("#saveScheduleBtn").addEventListener("click", () => saveSchedule().catch(alert));
     $("#saveStudentBtn").addEventListener("click", () => saveStudent().catch(alert));
     $("#deleteStudentBtn").addEventListener("click", () => deleteStudent().catch(alert));
     $("#studentSelect").addEventListener("change", render);
+    $("#manualMoneyStudent").addEventListener("change", () => {
+      $("#studentSelect").value = $("#manualMoneyStudent").value;
+    });
+    $("#connect4Board").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-connect4-col]");
+      if (button) connect4Move(Number(button.dataset.connect4Col)).catch(alert);
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "k") {
+        openModal($("#creatorModal"));
+      }
+    });
 
     $("#roster").addEventListener("click", async (event) => {
       const pointBtn = event.target.closest("[data-admin-point]");
@@ -1460,7 +1831,6 @@
 
     if (!localStorage.getItem(STORAGE.clientId)) localStorage.setItem(STORAGE.clientId, uid());
     poll();
-    if (!currentMe()) openModal($("#signupModal"));
     setInterval(poll, 3000);
   </script>
 </body>

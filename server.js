@@ -7,6 +7,8 @@ const { createClient } = require("@supabase/supabase-js");
 
 const PORT = Number(process.env.PORT || 3000);
 const CREATOR_PASSWORD = process.env.CREATOR_PASSWORD || "Erik2011";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const ROOT = __dirname;
 const INDEX_FILE = path.join(ROOT, "index.html");
 
@@ -27,6 +29,57 @@ const DEFAULT_SHOP = [
   { id: "shield", name: "Mbrojtje", price: 40, effectLabel: "Mbron humbjen", description: "Mbron nga humbja e parë në një duel ose bet." },
   { id: "double", name: "Double Up", price: 30, effectLabel: "Dyfishon fitimin", description: "Dyfishon fitimin në një fitore të ardhshme." }
 ];
+
+const BAD_WORDS = [
+  "fuck",
+  "shit",
+  "bitch",
+  "asshole",
+  "cunt",
+  "nigger",
+  "fucker",
+  "motherfucker",
+  "idiot",
+  "stupid"
+];
+
+function defaultConnect4() {
+  return {
+    board: Array.from({ length: 6 }, () => Array(7).fill(null)),
+    redId: null,
+    yellowId: null,
+    redName: "",
+    yellowName: "",
+    turn: "red",
+    winner: null,
+    lastMoveAt: null,
+    ranked: true,
+    updatedAt: now()
+  };
+}
+
+function normalizeConnect4(input) {
+  const fresh = defaultConnect4();
+  const board = Array.isArray(input?.board) && input.board.length === 6
+    ? input.board.map((row) => Array.isArray(row) && row.length === 7 ? row.map((cell) => (cell === "red" || cell === "yellow" ? cell : null)) : Array(7).fill(null))
+    : fresh.board;
+  return {
+    board,
+    redId: input?.redId || null,
+    yellowId: input?.yellowId || null,
+    redName: input?.redName || "",
+    yellowName: input?.yellowName || "",
+    turn: input?.turn === "yellow" ? "yellow" : "red",
+    winner: input?.winner === "red" || input?.winner === "yellow" ? input.winner : null,
+    lastMoveAt: input?.lastMoveAt || null,
+    ranked: input?.ranked !== false,
+    updatedAt: input?.updatedAt || now()
+  };
+}
+
+function defaultBlackjackSessions() {
+  return {};
+}
 
 function uid() {
   return crypto.randomUUID();
@@ -78,6 +131,9 @@ function defaultData() {
     ],
     history: [],
     matchQueue: [],
+    reports: [],
+    connect4: defaultConnect4(),
+    blackjackSessions: defaultBlackjackSessions(),
     shop: DEFAULT_SHOP,
     creatorActive: false
   };
@@ -95,6 +151,9 @@ function normalizeData(input) {
       points: Number(p.points || 0),
       money: Number(p.money || 0),
       inventory: Array.isArray(p.inventory) ? p.inventory : [],
+      timeoutUntil: p.timeoutUntil || null,
+      timeoutReason: p.timeoutReason || "",
+      dailyRewardAt: p.dailyRewardAt || null,
       createdAt: p.createdAt || now(),
       updatedAt: p.updatedAt || now()
     })) : fresh.profiles,
@@ -102,6 +161,9 @@ function normalizeData(input) {
     chat: Array.isArray(input.chat) ? input.chat : fresh.chat,
     history: Array.isArray(input.history) ? input.history : fresh.history,
     matchQueue: Array.isArray(input.matchQueue) ? input.matchQueue : [],
+    reports: Array.isArray(input.reports) ? input.reports : fresh.reports,
+    connect4: normalizeConnect4(input.connect4),
+    blackjackSessions: typeof input.blackjackSessions === "object" && input.blackjackSessions ? input.blackjackSessions : fresh.blackjackSessions,
     shop: Array.isArray(input.shop) ? input.shop : fresh.shop,
     creatorActive: Boolean(input.creatorActive)
   };
@@ -114,21 +176,45 @@ const supabase = hasSupabase
     })
   : null;
 
-async function readData() {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from(SUPABASE_TABLE)
-      .select("state")
-      .eq("id", 1)
-      .maybeSingle();
+let storageMode = supabase ? "supabase" : "file";
+let storageWarning = "";
 
-    if (error) throw error;
-    if (!data?.state) {
-      const fresh = defaultData();
-      await writeData(fresh);
-      return fresh;
+function isSupabaseNetworkError(error) {
+  const message = String(error?.message || error || "");
+  return message.includes("fetch failed") || message.includes("ENOTFOUND") || message.includes("ECONNREFUSED") || message.includes("ETIMEDOUT");
+}
+
+function disableSupabase(error) {
+  if (storageMode === "file") return;
+  storageMode = "file";
+  storageWarning = `Supabase u çaktivizua për këtë session: ${String(error?.message || error)}`;
+  console.warn(storageWarning);
+}
+
+async function readData() {
+  if (storageMode === "supabase" && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from(SUPABASE_TABLE)
+        .select("state")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data?.state) {
+        const fresh = defaultData();
+        await writeData(fresh);
+        return fresh;
+      }
+      return normalizeData(data.state);
+    } catch (error) {
+      if (isSupabaseNetworkError(error)) {
+        disableSupabase(error);
+      } else {
+        console.warn("Supabase read failed, switching to local file storage.", error);
+        disableSupabase(error);
+      }
     }
-    return normalizeData(data.state);
   }
 
   const filePath = path.join(ROOT, "data.json");
@@ -148,13 +234,22 @@ async function readData() {
 }
 
 async function writeData(data) {
-  if (supabase) {
-    const payload = normalizeData(data);
-    const { error } = await supabase
-      .from(SUPABASE_TABLE)
-      .upsert({ id: 1, state: payload, updated_at: now() }, { onConflict: "id" });
-    if (error) throw error;
-    return;
+  if (storageMode === "supabase" && supabase) {
+    try {
+      const payload = normalizeData(data);
+      const { error } = await supabase
+        .from(SUPABASE_TABLE)
+        .upsert({ id: 1, state: payload, updated_at: now() }, { onConflict: "id" });
+      if (error) throw error;
+      return;
+    } catch (error) {
+      if (isSupabaseNetworkError(error)) {
+        disableSupabase(error);
+      } else {
+        console.warn("Supabase write failed, switching to local file storage.", error);
+        disableSupabase(error);
+      }
+    }
   }
 
   const filePath = path.join(ROOT, "data.json");
@@ -206,6 +301,37 @@ function moneyFor(profile) {
   return Number(profile.money || 0);
 }
 
+function timeoutUntil(profile) {
+  return profile?.timeoutUntil ? new Date(profile.timeoutUntil).getTime() : 0;
+}
+
+function isTimedOut(profile) {
+  return Boolean(profile && timeoutUntil(profile) > Date.now());
+}
+
+function formatTimeout(profile) {
+  const until = timeoutUntil(profile);
+  if (!until) return "";
+  return new Date(until).toLocaleString("sq-AL");
+}
+
+function setTimeoutFor(profile, minutes, reason) {
+  profile.timeoutUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+  profile.timeoutReason = reason || "";
+  profile.updatedAt = now();
+}
+
+function containsBadWord(text) {
+  const value = String(text || "").toLowerCase();
+  return BAD_WORDS.some((word) => value.includes(word));
+}
+
+function startOfDayKey(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
+
 function getProfile(data, clientId) {
   return data.profiles.find((p) => p.id === clientId) || null;
 }
@@ -225,6 +351,11 @@ function makeState(data, req, adminSessions) {
     chat: data.chat,
     history: data.history,
     matchQueue: data.matchQueue || [],
+    connect4: data.connect4,
+    reports: requireAdmin(req, adminSessions) ? data.reports : [],
+    myTimeoutUntil: me?.timeoutUntil || null,
+    myTimeoutReason: me?.timeoutReason || "",
+    blackjackSession: clientId ? data.blackjackSessions?.[clientId] || null : null,
     shop: data.shop,
     creatorActive: requireAdmin(req, adminSessions)
   };
@@ -261,6 +392,9 @@ async function main() {
         points: 0,
         money: 20,
         inventory: [],
+        timeoutUntil: null,
+        timeoutReason: "",
+        dailyRewardAt: null,
         createdAt: now(),
         updatedAt: now()
       };
@@ -284,14 +418,54 @@ async function main() {
 
   function addChatMessage(body) {
     const profile = getProfile(data, body.clientId);
+    if (profile && isTimedOut(profile)) {
+      const until = formatTimeout(profile);
+      const err = new Error(`Je në timeout deri më ${until}.`);
+      err.statusCode = 403;
+      throw err;
+    }
+    const text = String(body.text || "").trim();
+    if (profile && containsBadWord(text)) {
+      setTimeoutFor(profile, 10, "Fjalë fyese në chat.");
+      const err = new Error("Mesazhi u bllokua dhe profili u vendos në timeout 10 minuta.");
+      err.statusCode = 403;
+      throw err;
+    }
     const author = profile ? (profile.nickname?.trim() || displayName(profile)) : "Anëtar i klasës";
     data.chat.unshift({
       id: uid(),
       type: "user",
       author,
-      text: String(body.text || "").trim(),
+      text,
       image: body.image || "",
       createdAt: now()
+    });
+  }
+
+  function addAiMessage(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për të folur me AI.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const text = String(body.text || "").trim();
+    if (!text) throw new Error("Shkruaj një pyetje për AI.");
+    if (containsBadWord(text)) {
+      setTimeoutFor(profile, 10, "Fjalë fyese në AI.");
+      throw new Error("Mesazhi u bllokua dhe profili u vendos në timeout 10 minuta.");
+    }
+    return { profile, text };
+  }
+
+  function createReport(body) {
+    const profile = getProfile(data, body.clientId);
+    const text = String(body.text || "").trim();
+    if (!text) throw new Error("Shkruaj një bug që do të raportosh.");
+    data.reports.unshift({
+      id: uid(),
+      reporterId: profile?.id || String(body.clientId || ""),
+      reporterName: profile ? displayName(profile) : "Anonymous",
+      text,
+      createdAt: now(),
+      status: "open"
     });
   }
 
@@ -312,6 +486,23 @@ async function main() {
     const idx = data.profiles.findIndex((p) => p.id === body.id);
     if (idx === -1) throw new Error("Profili nuk u gjet.");
     data.profiles.splice(idx, 1);
+  }
+
+  function adminMoney(body) {
+    const profile = getProfile(data, body.id);
+    if (!profile) throw new Error("Profili nuk u gjet.");
+    const amount = Math.max(1, Number(body.amount || 0));
+    profile.money = moneyFor(profile) + amount;
+    profile.updatedAt = now();
+    return profile;
+  }
+
+  function adminClearHistory() {
+    data.history = [];
+  }
+
+  function adminClearReports() {
+    data.reports = [];
   }
 
   function adminSchedule(body) {
@@ -505,6 +696,367 @@ async function main() {
     };
   }
 
+  function connect4SeatFor(profile) {
+    if (!profile) return null;
+    if (data.connect4.redId === profile.id) return "red";
+    if (data.connect4.yellowId === profile.id) return "yellow";
+    return null;
+  }
+
+  function connect4Reset() {
+    const keepRanked = Boolean(data.connect4?.ranked);
+    data.connect4 = {
+      ...defaultConnect4(),
+      ranked: keepRanked
+    };
+  }
+
+  function connect4Join(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Connect 4.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const game = data.connect4 || defaultConnect4();
+    if (typeof body.ranked === "boolean") {
+      game.ranked = body.ranked;
+    }
+    if (game.redId === profile.id || game.yellowId === profile.id) {
+      return { ok: true, seat: connect4SeatFor(profile), game, message: "Je tashmë në lojë." };
+    }
+    if (!game.redId) {
+      game.redId = profile.id;
+      game.redName = displayName(profile);
+      game.updatedAt = now();
+      data.connect4 = game;
+      return { ok: true, seat: "red", game, message: `${displayName(profile)} hyri si Red.` };
+    }
+    if (!game.yellowId) {
+      game.yellowId = profile.id;
+      game.yellowName = displayName(profile);
+      game.updatedAt = now();
+      data.connect4 = game;
+      return { ok: true, seat: "yellow", game, message: `${displayName(profile)} hyri si Yellow.` };
+    }
+    throw new Error("Connect 4 është plot. Prit ose hiq një lojtar.");
+  }
+
+  function connect4Winner(board, row, col, token) {
+    const directions = [
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [1, -1]
+    ];
+    for (const [dr, dc] of directions) {
+      let count = 1;
+      for (const sign of [-1, 1]) {
+        let r = row + dr * sign;
+        let c = col + dc * sign;
+        while (r >= 0 && r < 6 && c >= 0 && c < 7 && board[r][c] === token) {
+          count += 1;
+          r += dr * sign;
+          c += dc * sign;
+        }
+      }
+      if (count >= 4) return true;
+    }
+    return false;
+  }
+
+  function connect4Move(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Connect 4.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const game = data.connect4 || defaultConnect4();
+    if (game.winner) throw new Error("Loja ka përfunduar. Reset board për një ndeshje të re.");
+    const seat = connect4SeatFor(profile);
+    if (!seat) throw new Error("Futu në Connect 4 si lojtar.");
+    if (game.turn !== seat) throw new Error("Nuk është radha jote.");
+    const col = Math.max(0, Math.min(6, Number(body.column)));
+    let row = -1;
+    for (let r = 5; r >= 0; r -= 1) {
+      if (!game.board[r][col]) {
+        row = r;
+        break;
+      }
+    }
+    if (row === -1) throw new Error("Kolona është plot.");
+    game.board[row][col] = seat;
+    game.turn = seat === "red" ? "yellow" : "red";
+    game.lastMoveAt = now();
+    game.updatedAt = now();
+
+    const won = connect4Winner(game.board, row, col, seat);
+    const filled = game.board.every((r) => r.every(Boolean));
+    if (won) {
+      game.winner = seat;
+      const winnerProfile = seat === "red" ? getProfile(data, game.redId) : getProfile(data, game.yellowId);
+      const loserProfile = seat === "red" ? getProfile(data, game.yellowId) : getProfile(data, game.redId);
+      if (winnerProfile) {
+        winnerProfile.money = moneyFor(winnerProfile) + (game.ranked ? 25 : 15);
+        winnerProfile.updatedAt = now();
+      }
+      if (loserProfile && game.ranked) {
+        loserProfile.money = Math.max(0, moneyFor(loserProfile) - 5);
+        loserProfile.updatedAt = now();
+      }
+      data.history.push({
+        createdAt: now(),
+        leftName: game.redName || "Red",
+        rightName: game.yellowName || "Yellow",
+        winnerName: seat === "red" ? (game.redName || "Red") : (game.yellowName || "Yellow"),
+        amount: game.ranked ? 25 : 15,
+        type: "connect4"
+      });
+      data.connect4 = game;
+      return { ok: true, winner: seat, message: `${seat === "red" ? game.redName : game.yellowName} fitoi Connect 4.`, game };
+    }
+
+    if (filled) {
+      game.winner = "draw";
+      data.history.push({
+        createdAt: now(),
+        leftName: game.redName || "Red",
+        rightName: game.yellowName || "Yellow",
+        winnerName: "Barazim",
+        amount: 0,
+        type: "connect4"
+      });
+      data.connect4 = game;
+      return { ok: true, draw: true, message: "Boardi u mbush. Barazim.", game };
+    }
+
+    data.connect4 = game;
+    return { ok: true, message: `U vendos gur në kolonën ${col + 1}.`, game };
+  }
+
+  function blackjackDeck() {
+    const suits = ["♠", "♥", "♦", "♣"];
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const deck = [];
+    for (const suit of suits) {
+      for (const rank of ranks) {
+        deck.push({ rank, suit, value: rank === "A" ? 11 : ["K", "Q", "J"].includes(rank) ? 10 : Number(rank) });
+      }
+    }
+    for (let i = deck.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+  }
+
+  function blackjackValue(cards) {
+    let total = cards.reduce((sum, card) => sum + card.value, 0);
+    let aces = cards.filter((card) => card.rank === "A").length;
+    while (total > 21 && aces > 0) {
+      total -= 10;
+      aces -= 1;
+    }
+    return total;
+  }
+
+  function blackjackSessionFor(clientId) {
+    return data.blackjackSessions?.[clientId] || null;
+  }
+
+  function blackjackSetSession(clientId, session) {
+    data.blackjackSessions[clientId] = session;
+  }
+
+  function blackjackClearSession(clientId) {
+    delete data.blackjackSessions[clientId];
+  }
+
+  function blackjackState(session, revealDealer = false) {
+    return {
+      playerCards: session.playerCards,
+      dealerCards: revealDealer ? session.dealerCards : [session.dealerCards[0]],
+      playerTotal: blackjackValue(session.playerCards),
+      dealerTotal: revealDealer ? blackjackValue(session.dealerCards) : blackjackValue([session.dealerCards[0]]),
+      bet: session.bet,
+      status: session.status,
+      result: session.result || null,
+      revealDealer
+    };
+  }
+
+  function blackjackFinalize(clientId, session, profile) {
+    const playerTotal = blackjackValue(session.playerCards);
+    const dealerTotal = blackjackValue(session.dealerCards);
+    let outcome = "push";
+    let payout = 0;
+    if (playerTotal > 21) {
+      outcome = "lose";
+    } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+      outcome = "win";
+      payout = session.bet * 2;
+    } else if (playerTotal < dealerTotal) {
+      outcome = "lose";
+    }
+    if (outcome === "push") payout = session.bet;
+    if (payout > 0) {
+      profile.money = moneyFor(profile) + payout;
+      profile.updatedAt = now();
+    }
+    const message = outcome === "win"
+      ? `Fitove Blackjack dhe morre ${session.bet}$.`
+      : outcome === "lose"
+        ? `Humbje Blackjack.`
+        : `Blackjack barazim, beti u kthye mbrapsht.`;
+    data.history.push({
+      createdAt: now(),
+      leftName: displayName(profile),
+      rightName: "Dealer",
+      winnerName: outcome === "win" ? displayName(profile) : outcome === "lose" ? "Dealer" : "Barazim",
+      amount: outcome === "win" ? session.bet : outcome === "push" ? 0 : session.bet,
+      type: "blackjack"
+    });
+    blackjackClearSession(clientId);
+    return { ok: true, outcome, message, state: null };
+  }
+
+  function blackjackStart(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Blackjack.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const bet = Math.max(1, Number(body.bet || 0));
+    if (bet > moneyFor(profile)) throw new Error("Nuk ke mjaftueshëm coins.");
+    const existing = blackjackSessionFor(profile.id);
+    if (existing) return { ok: true, state: blackjackState(existing), message: "Ke një lojë aktive." };
+    profile.money = moneyFor(profile) - bet;
+    profile.updatedAt = now();
+    const session = {
+      deck: blackjackDeck(),
+      playerCards: [],
+      dealerCards: [],
+      bet,
+      status: "playing",
+      result: null,
+      createdAt: now(),
+      updatedAt: now()
+    };
+    session.playerCards.push(session.deck.pop(), session.deck.pop());
+    session.dealerCards.push(session.deck.pop(), session.deck.pop());
+    blackjackSetSession(profile.id, session);
+    const playerTotal = blackjackValue(session.playerCards);
+    if (playerTotal === 21) {
+      session.status = "stand";
+      blackjackSetSession(profile.id, session);
+      return blackjackStand({ clientId: profile.id, auto: true });
+    }
+    return { ok: true, state: blackjackState(session), message: "Blackjack nisi." };
+  }
+
+  function blackjackHit(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Blackjack.");
+    const session = blackjackSessionFor(profile.id);
+    if (!session) throw new Error("Nuk ke lojë aktive.");
+    if (session.status !== "playing") throw new Error("Loja ka përfunduar.");
+    session.playerCards.push(session.deck.pop());
+    session.updatedAt = now();
+    const total = blackjackValue(session.playerCards);
+    if (total > 21) {
+      session.status = "finished";
+      session.result = "lose";
+      blackjackSetSession(profile.id, session);
+      const final = blackjackFinalize(profile.id, session, profile);
+      return { ...final, state: null, message: "U bust-ove. " + final.message };
+    }
+    blackjackSetSession(profile.id, session);
+    return { ok: true, state: blackjackState(session), message: `More një kartë. Totali yt është ${total}.` };
+  }
+
+  function blackjackStand(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Blackjack.");
+    const session = blackjackSessionFor(profile.id);
+    if (!session) throw new Error("Nuk ke lojë aktive.");
+    if (session.status !== "playing" && !body.auto) throw new Error("Loja ka përfunduar.");
+    while (blackjackValue(session.dealerCards) < 17) {
+      session.dealerCards.push(session.deck.pop());
+    }
+    session.status = "finished";
+    blackjackSetSession(profile.id, session);
+    const final = blackjackFinalize(profile.id, session, profile);
+    return { ...final, dealerTotal: blackjackValue(session.dealerCards), state: null };
+  }
+
+  function blackjackStateRoute(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për Blackjack.");
+    const session = blackjackSessionFor(profile.id);
+    if (!session) return { ok: true, state: null };
+    return { ok: true, state: blackjackState(session) };
+  }
+
+  async function askOpenAi(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për AI.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const text = String(body.text || "").trim();
+    if (!text) throw new Error("Shkruaj diçka për AI.");
+    if (containsBadWord(text)) {
+      setTimeoutFor(profile, 10, "Fjalë fyese në AI.");
+      throw new Error("Mesazhi u bllokua dhe profili u vendos në timeout 10 minuta.");
+    }
+    if (!OPENAI_API_KEY) {
+      return {
+        reply: "AI nuk është konfiguruar ende. Vendos OPENAI_API_KEY si env var në Render që të flasë me ty.",
+        usage: "offline"
+      };
+    }
+
+    const payload = {
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta. Mos jep këshilla për mashtrim, urrejtje, ose gjëra të dëmshme."
+        },
+        {
+          role: "user",
+          content: `Profili: ${displayName(profile)}. Pyetja: ${text}`
+        }
+      ],
+      temperature: 0.7
+    };
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const textBody = await response.text();
+      throw new Error(textBody || `OpenAI HTTP ${response.status}`);
+    }
+    const json = await response.json();
+    const reply = json?.choices?.[0]?.message?.content?.trim() || "Nuk mora përgjigje nga AI.";
+    return { reply, usage: "online" };
+  }
+
+  function addDailyReward(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për reward ditor.");
+    const today = startOfDayKey();
+    if (profile.dailyRewardAt === today) {
+      throw new Error("Ke marrë reward-in ditor sot.");
+    }
+    profile.dailyRewardAt = today;
+    profile.money = moneyFor(profile) + 10;
+    profile.updatedAt = now();
+    return { ok: true, reward: 10, message: "Morre 10 coins reward ditor." };
+  }
+
+  function createBugReport(body) {
+    createReport(body);
+    return { ok: true };
+  }
+
   function buyShopItem(body) {
     const profile = getProfile(data, body.clientId);
     if (!profile) throw new Error("Duhet profil për të blerë.");
@@ -585,10 +1137,49 @@ async function main() {
         return saveAndRespond(res, { ok: true });
       }
 
+      if (req.method === "POST" && pathname === "/api/admin/money") {
+        if (!requireAdmin(req, adminSessions)) return sendJson(res, 403, { error: "Nuk je krijues." });
+        const body = await parseBody(req);
+        adminMoney(body);
+        return saveAndRespond(res, { ok: true });
+      }
+
+      if (req.method === "POST" && pathname === "/api/admin/history/clear") {
+        if (!requireAdmin(req, adminSessions)) return sendJson(res, 403, { error: "Nuk je krijues." });
+        adminClearHistory();
+        return saveAndRespond(res, { ok: true });
+      }
+
+      if (req.method === "POST" && pathname === "/api/admin/reports/clear") {
+        if (!requireAdmin(req, adminSessions)) return sendJson(res, 403, { error: "Nuk je krijues." });
+        adminClearReports();
+        return saveAndRespond(res, { ok: true });
+      }
+
       if (req.method === "POST" && pathname === "/api/chat") {
         const body = await parseBody(req);
         addChatMessage(body);
         return saveAndRespond(res, { ok: true });
+      }
+
+      if (req.method === "POST" && pathname === "/api/ai/chat") {
+        const body = await parseBody(req);
+        addAiMessage(body);
+        const result = await askOpenAi(body);
+        data.chat.unshift({
+          id: uid(),
+          type: "system",
+          author: "AI",
+          text: result.reply,
+          createdAt: now()
+        });
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/report") {
+        const body = await parseBody(req);
+        const result = createBugReport(body);
+        return saveAndRespond(res, result);
       }
 
       if (req.method === "POST" && pathname === "/api/chat/clear") {
@@ -615,12 +1206,6 @@ async function main() {
         return saveAndRespond(res, result);
       }
 
-      if (req.method === "POST" && pathname === "/api/game/rps") {
-        const body = await parseBody(req);
-        const result = doRpsDuel(body);
-        return saveAndRespond(res, result);
-      }
-
       if (req.method === "POST" && pathname === "/api/game/match/join") {
         const body = await parseBody(req);
         const result = joinMatchQueue(body);
@@ -630,6 +1215,58 @@ async function main() {
       if (req.method === "POST" && pathname === "/api/game/match/leave") {
         const body = await parseBody(req);
         const result = leaveMatchQueue(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/connect4/join") {
+        const body = await parseBody(req);
+        const result = connect4Join(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/connect4/move") {
+        const body = await parseBody(req);
+        const result = connect4Move(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/connect4/reset") {
+        const body = await parseBody(req);
+        const profile = getProfile(data, body.clientId);
+        if (!profile) throw new Error("Duhet profil për reset.");
+        const seat = connect4SeatFor(profile);
+        if (!requireAdmin(req, adminSessions) && !seat) return sendJson(res, 403, { error: "Nuk ke akses." });
+        connect4Reset();
+        return saveAndRespond(res, { ok: true, game: data.connect4 });
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/blackjack/start") {
+        const body = await parseBody(req);
+        const result = blackjackStart(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/blackjack/hit") {
+        const body = await parseBody(req);
+        const result = blackjackHit(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/blackjack/stand") {
+        const body = await parseBody(req);
+        const result = blackjackStand(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/game/blackjack/state") {
+        const body = await parseBody(req);
+        const result = blackjackStateRoute(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/rewards/daily") {
+        const body = await parseBody(req);
+        const result = addDailyReward(body);
         return saveAndRespond(res, result);
       }
 
@@ -659,8 +1296,12 @@ async function main() {
 
   server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (storageWarning) {
+      console.log(storageWarning);
+    } else if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.log("Running with local file storage. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for full online mode.");
+    } else if (storageMode === "supabase") {
+      console.log("Supabase storage is active.");
     }
   });
 }
