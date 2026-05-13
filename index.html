@@ -213,10 +213,138 @@
     }
     .message.self { margin-left:auto; background:#eef7ef; border-color:#d8ebde; }
     .message.system { margin:0 auto; background:#f1f5f9; color:var(--muted); font-style:italic; text-align:center; }
+    .message.skin {
+      position:relative;
+      overflow:hidden;
+      background: var(--bubble-fill, #fff);
+      border-color: var(--bubble-border, var(--border));
+      color: var(--bubble-text, var(--text));
+    }
+    .message.skin::before,
+    .bubble-preview::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image: var(--bubble-image, none);
+      background-size: cover;
+      background-position:center;
+      opacity:.16;
+      pointer-events:none;
+    }
+    .message.skin .message-head,
+    .message.skin .bubble-line { position:relative; z-index:1; }
     .message-head {
       display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:8px; font-size:.8rem; color: var(--muted);
     }
     .message img { display:block; width:100%; max-width:420px; margin-top:10px; border-radius:14px; }
+
+    .bubble-skin-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:12px;
+    }
+    .bubble-skin-card {
+      position:relative;
+      overflow:hidden;
+      padding:0;
+      border-radius:18px;
+      border:1px solid var(--border);
+      background:#fff;
+      display:grid;
+    }
+    .bubble-preview {
+      position:relative;
+      overflow:hidden;
+      min-height:110px;
+      padding:14px;
+      border-bottom:1px solid var(--border);
+      border-radius:18px 18px 0 0;
+      display:grid;
+      align-content:end;
+    }
+    .bubble-preview strong,
+    .bubble-preview .note,
+    .bubble-preview .chip {
+      position:relative;
+      z-index:1;
+    }
+    .bubble-body {
+      padding:14px;
+      display:grid;
+      gap:10px;
+    }
+    .bubble-inventory {
+      display:grid;
+      gap:10px;
+    }
+    .inventory-row {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    .inventory-row.equipped {
+      border-color: rgba(20,83,45,.55);
+      background: linear-gradient(135deg, rgba(20,83,45,.09), rgba(15,118,110,.04));
+    }
+    .spin-wrap {
+      position:relative;
+      display:grid;
+      place-items:center;
+      padding:10px 0 4px;
+      min-height:240px;
+    }
+    .spin-pointer {
+      position:absolute;
+      top:12px;
+      width:0;
+      height:0;
+      border-left:12px solid transparent;
+      border-right:12px solid transparent;
+      border-top:20px solid var(--accent);
+      z-index:2;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,.15));
+    }
+    .spin-wheel {
+      width:min(220px, 64vw);
+      aspect-ratio:1;
+      border-radius:50%;
+      border:12px solid rgba(20,83,45,.12);
+      background:
+        conic-gradient(
+          from 0deg,
+          #e7f6ea 0deg 45deg,
+          #e3f0ff 45deg 90deg,
+          #f7efe6 90deg 135deg,
+          #fff0f7 135deg 180deg,
+          #edf9f7 180deg 225deg,
+          #f6f3ff 225deg 270deg,
+          #fff7e8 270deg 315deg,
+          #e8fff1 315deg 360deg
+        );
+      box-shadow: 0 18px 32px rgba(18,33,43,.16);
+      position:relative;
+      transition: transform .9s cubic-bezier(.22,.61,.36,1);
+    }
+    .spin-wheel.spin {
+      animation: spinWheel 1s cubic-bezier(.22,.61,.36,1);
+    }
+    .spin-wheel::after {
+      content:"";
+      position:absolute;
+      inset:18px;
+      border-radius:50%;
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(20,83,45,.14);
+    }
+    @keyframes spinWheel {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(1440deg); }
+    }
 
     .composer { display:grid; gap:12px; }
     .field { display:grid; gap:8px; }
@@ -581,7 +709,31 @@
           </div>
           <span class="badge" id="shopBadge">Shop aktiv</span>
         </div>
-        <div class="grid-3" id="shopGrid"></div>
+        <div class="grid-2">
+          <div class="mini-card">
+            <h3>Utility shop</h3>
+            <p>Items që ndihmojnë në lojë dhe coins.</p>
+            <div style="height:12px;"></div>
+            <div class="grid-2" id="utilityShopGrid"></div>
+          </div>
+          <div class="mini-card">
+            <h3>Bubble skins</h3>
+            <p>20 tema për chat bubble, me një skin të rrallë shumë të vështirë për t'u hapur.</p>
+            <div style="height:12px;"></div>
+            <div class="bubble-skin-grid" id="bubbleShopGrid"></div>
+          </div>
+        </div>
+        <div style="height:16px"></div>
+        <div class="mini-card">
+          <div class="section-head" style="margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">Inventory & equip</h3>
+              <p class="section-lead" style="margin-top:4px;">Zgjidh skin-in që do shohin të tjerët kur shkruan në chat.</p>
+            </div>
+            <span class="badge" id="inventoryBadge">0 skin-e</span>
+          </div>
+          <div class="bubble-inventory" id="bubbleInventoryGrid"></div>
+        </div>
       </section>
 
       <section class="card section" id="games">
@@ -612,6 +764,35 @@
                   </div>
                 </div>
                 <p id="betResult" class="note" style="margin-top:12px;">Rezultati shfaqet këtu.</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="game-accordion">
+            <summary class="game-summary">Earn coins <span>Daily reward + spin + unlocks</span></summary>
+            <div class="game-panel">
+              <div class="game-shell">
+                <div class="game-stage">
+                  <h3>Daily reward</h3>
+                  <p>Merri 10 coins një herë në ditë.</p>
+                  <div class="status-strip" id="dailyRewardStatus">Hape çdo ditë për reward.</div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn btn-primary" id="dailyRewardBtn" type="button">Merr reward ditor</button>
+                  </div>
+                </div>
+
+                <div class="game-stage">
+                  <h3>Spin rewards</h3>
+                  <p>Hidhe rrotën për coins ose një bubble skin të ri.</p>
+                  <div class="spin-wrap">
+                    <div class="spin-pointer"></div>
+                    <div id="spinWheel" class="spin-wheel"></div>
+                  </div>
+                  <div class="status-strip" id="spinStatus">Gati për spin.</div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn btn-primary" id="spinRewardBtn" type="button">Spin rewards</button>
+                  </div>
+                </div>
               </div>
             </div>
           </details>
@@ -1028,6 +1209,7 @@
       reports: [],
       creatorActive: false,
       coinGuess: "heads",
+      spinCooldownUntil: null,
       myTimeoutUntil: null,
       myTimeoutReason: "",
       lastGameMessage: "",
@@ -1123,6 +1305,53 @@
       $("#guessHeadsBtn").classList.toggle("active", guess === "heads");
       $("#guessTailsBtn").classList.toggle("active", guess === "tails");
       $("#coinBadge").textContent = guess === "heads" ? "Po zgjedh kokë." : "Po zgjedh bisht.";
+    }
+
+    function bubbleSkinById(skinId) {
+      return state.shop.find((item) => item.id === skinId && item.kind === "bubbleSkin")
+        || state.shop.find((item) => item.id === "classic" && item.kind === "bubbleSkin")
+        || {
+          id: "classic",
+          name: "Classic",
+          kind: "bubbleSkin",
+          fill: "#ffffff",
+          border: "#d9e1db",
+          text: "#13212a",
+          asset: ""
+        };
+    }
+
+    function bubbleSkinVars(skin) {
+      const fill = skin.fill || "#ffffff";
+      const border = skin.border || "#d9e1db";
+      const text = skin.text || "#13212a";
+      const image = skin.asset ? `url("${skin.asset}")` : "none";
+      return `--bubble-fill:${fill};--bubble-border:${border};--bubble-text:${text};--bubble-image:${image};`;
+    }
+
+    function renderBubbleSkinCard(item, owned, equipped) {
+      return `
+        <article class="bubble-skin-card">
+          <div class="bubble-preview" style="${bubbleSkinVars(item)}">
+            <strong>${escapeHtml(item.name)}</strong>
+            <div class="note">${escapeHtml(item.effectLabel || item.rarity || "skin")}</div>
+            <div class="chips" style="margin-top:10px;">
+              <span class="chip good">${item.price === 0 ? "Free" : `${item.price}$`}</span>
+              <span class="chip neutral">${escapeHtml(item.rarity || "common")}</span>
+            </div>
+          </div>
+          <div class="bubble-body">
+            <p class="note">${escapeHtml(item.description || "Bubble skin.")}</p>
+            <div class="actions" style="margin-top:0;">
+              ${
+                owned
+                  ? `<button class="btn ${equipped ? "btn-primary" : "btn-secondary"}" data-equip-skin="${item.id}" type="button">${equipped ? "Equipped" : "Vendos"}</button>`
+                  : `<button class="btn btn-primary" data-buy="${item.id}" type="button">Bli</button>`
+              }
+            </div>
+          </div>
+        </article>
+      `;
     }
 
     function rankFromPoints(points) {
@@ -1233,6 +1462,13 @@
       $("#arenaRank").textContent = me ? `${rankTier} ${mePoints >= 100 ? "I" : mePoints >= 70 ? "II" : mePoints >= 40 ? "III" : ""}`.trim() : "Bronze I";
       $("#arenaCoins").textContent = `${me ? moneyFor(me) : 0} coins`;
       $("#arenaQueue").textContent = `${queueCount} lojtarë në radhë`;
+      $("#dailyRewardStatus").textContent = me?.dailyRewardAt === new Date().toISOString().slice(0, 10)
+        ? "Reward-i i sotëm u mor."
+        : "Hape çdo ditë për 10 coins.";
+      const spinReadyAt = me?.spinCooldownUntil ? new Date(me.spinCooldownUntil).getTime() : 0;
+      $("#spinStatus").textContent = spinReadyAt > Date.now()
+        ? `Spin-i hapet përsëri më ${new Date(spinReadyAt).toLocaleString("sq-AL")}.`
+        : "Gati për spin.";
 
       const yourSlot = $("#yourProfileSlot");
       if (me) {
@@ -1286,7 +1522,9 @@
         </div>
       `).join("");
 
-      $("#shopGrid").innerHTML = state.shop.map((item) => `
+      const utilityShop = state.shop.filter((item) => item.kind !== "bubbleSkin");
+      const bubbleShop = state.shop.filter((item) => item.kind === "bubbleSkin");
+      $("#utilityShopGrid").innerHTML = utilityShop.map((item) => `
         <article class="mini-card">
           <h3>${escapeHtml(item.name)}</h3>
           <p>${escapeHtml(item.description)}</p>
@@ -1299,6 +1537,32 @@
           <button class="btn btn-primary" data-buy="${item.id}" type="button">Bli</button>
         </article>
       `).join("");
+      $("#bubbleShopGrid").innerHTML = bubbleShop.map((item) => {
+        const owned = (me?.inventory || []).some((entry) => entry.type === "bubbleSkin" && entry.itemId === item.id);
+        const equipped = me?.equippedBubbleSkinId === item.id;
+        return renderBubbleSkinCard(item, owned, equipped);
+      }).join("");
+      const ownedBubbleSkins = me ? (me.inventory || []).filter((entry) => entry.type === "bubbleSkin") : [];
+      $("#inventoryBadge").textContent = `${ownedBubbleSkins.length} skin-e`;
+      $("#bubbleInventoryGrid").innerHTML = me
+        ? ownedBubbleSkins.length
+          ? ownedBubbleSkins.map((entry) => {
+              const skin = bubbleSkinById(entry.itemId);
+              const equipped = me.equippedBubbleSkinId === skin.id;
+              return `
+                <div class="inventory-row ${equipped ? "equipped" : ""}">
+                  <div>
+                    <strong>${escapeHtml(skin.name || entry.name)}</strong>
+                    <div class="note">${escapeHtml(skin.rarity || entry.rarity || "common")} · ${escapeHtml(skin.effectLabel || "")}</div>
+                  </div>
+                  <div class="actions" style="margin-top:0;">
+                    <button class="btn ${equipped ? "btn-primary" : "btn-secondary"}" data-equip-skin="${skin.id}" type="button">${equipped ? "Equipped" : "Vendos"}</button>
+                  </div>
+                </div>
+              `;
+            }).join("")
+          : `<div class="inventory-row"><div><strong>Inventory bosh</strong><div class="note">Blej ose fito skin-e nga spin-i.</div></div></div>`
+        : `<div class="inventory-row"><div><strong>Pa profil</strong><div class="note">Hape signup për të përdorur inventory.</div></div></div>`;
 
       const players = rosterMoneyPlayers();
       const options = players.map((p) => `<option value="${p.id}">${escapeHtml(p.name)} - ${p.money}$</option>`).join("");
@@ -1350,13 +1614,14 @@
         }
         const self = me && m.author === profileDisplay(me);
         const imageHtml = m.image ? `<img src="${m.image}" alt="Foto" />` : "";
+        const skin = bubbleSkinById(m.bubbleSkinId || me?.equippedBubbleSkinId || "classic");
         return `
-          <div class="message ${self ? "self" : ""}">
+          <div class="message ${self ? "self" : ""} skin" style="${bubbleSkinVars(skin)}">
             <div class="message-head">
               <strong>${escapeHtml(m.author)}</strong>
               <span>${new Date(m.createdAt).toLocaleTimeString("sq-AL", { hour: "2-digit", minute: "2-digit" })}</span>
             </div>
-            <div>${escapeHtml(m.text || "")}</div>
+            <div class="bubble-line">${escapeHtml(m.text || "")}</div>
             ${imageHtml}
           </div>
         `;
@@ -1514,7 +1779,8 @@
         body: JSON.stringify({
           clientId: getClientId(),
           text: $("#chatMessage").value.trim(),
-          image
+          image,
+          bubbleSkinId: currentMe()?.equippedBubbleSkinId || "classic"
         })
       });
       $("#chatMessage").value = "";
@@ -1643,6 +1909,36 @@
         body: JSON.stringify({ clientId: getClientId() })
       });
       alert(result.message);
+      await loadState();
+    }
+
+    async function spinReward() {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për spin-in e parave.");
+        return;
+      }
+      $("#spinStatus").textContent = "Rrota po rrotullohet...";
+      const wheel = $("#spinWheel");
+      wheel.classList.remove("spin");
+      void wheel.offsetWidth;
+      wheel.classList.add("spin");
+      const result = await api("/api/rewards/spin", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId() })
+      });
+      $("#spinStatus").textContent = result.message;
+      await loadState();
+    }
+
+    async function equipSkin(skinId) {
+      if (!currentMe()) {
+        requireProfileNotice("Krijo profilin një herë për të vendosur skin.");
+        return;
+      }
+      await api("/api/shop/equip", {
+        method: "POST",
+        body: JSON.stringify({ clientId: getClientId(), skinId })
+      });
       await loadState();
     }
 
@@ -1778,6 +2074,7 @@
     $("#blackjackStartBtn").addEventListener("click", () => blackjackStart().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
     $("#blackjackHitBtn").addEventListener("click", () => blackjackHit().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
     $("#blackjackStandBtn").addEventListener("click", () => blackjackStand().catch((err) => { $("#blackjackStatus").textContent = err.message; }));
+    $("#spinRewardBtn").addEventListener("click", () => spinReward().catch((err) => { $("#spinStatus").textContent = err.message; }));
     $("#addMoneyBtn").addEventListener("click", () => addMoney().catch(alert));
     $("#clearHistoryBtn").addEventListener("click", () => clearMiniHistory().catch(alert));
     $("#clearReportsBtn").addEventListener("click", () => clearReports().catch(alert));
@@ -1792,6 +2089,20 @@
       const button = event.target.closest("[data-connect4-col]");
       if (button) connect4Move(Number(button.dataset.connect4Col)).catch(alert);
     });
+    $("#utilityShopGrid").addEventListener("click", (event) => {
+      const buyBtn = event.target.closest("[data-buy]");
+      if (buyBtn) buyItem(buyBtn.dataset.buy).catch(alert);
+    });
+    $("#bubbleShopGrid").addEventListener("click", (event) => {
+      const buyBtn = event.target.closest("[data-buy]");
+      const equipBtn = event.target.closest("[data-equip-skin]");
+      if (buyBtn) return buyItem(buyBtn.dataset.buy).catch(alert);
+      if (equipBtn) return equipSkin(equipBtn.dataset.equipSkin).catch(alert);
+    });
+    $("#bubbleInventoryGrid").addEventListener("click", (event) => {
+      const equipBtn = event.target.closest("[data-equip-skin]");
+      if (equipBtn) equipSkin(equipBtn.dataset.equipSkin).catch(alert);
+    });
     window.addEventListener("keydown", (event) => {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "k") {
         openModal($("#creatorModal"));
@@ -1805,10 +2116,6 @@
       if (pointBtn) return adminPoint(pointBtn.dataset.adminPoint, pointBtn.dataset.id).catch(alert);
       if (deleteBtn) return adminDelete(deleteBtn.dataset.adminDelete).catch(alert);
       if (buyBtn) return buyItem(buyBtn.dataset.buy).catch(alert);
-    });
-    $("#shopGrid").addEventListener("click", (event) => {
-      const buyBtn = event.target.closest("[data-buy]");
-      if (buyBtn) buyItem(buyBtn.dataset.buy).catch(alert);
     });
 
     const poll = async () => {

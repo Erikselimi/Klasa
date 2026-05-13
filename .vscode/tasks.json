@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build calc2",
+      "type": "shell",
+      "command": "${workspaceFolder}/Calculator/mingw64/bin/g++",
+      "args": [
+        "${workspaceFolder}/Calculator/calc2.cpp",
+        "-g",
+        "-o",
+        "${workspaceFolder}/Calculator/calc2.exe"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "env": {
+          "PATH": "${workspaceFolder}/Calculator/mingw64/bin;${env:PATH}"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Run calc2",
+      "type": "shell",
+      "command": "${workspaceFolder}/Calculator/calc2.exe",
+      "dependsOn": "Build calc2",
+      "options": {
+        "env": {
+          "PATH": "${workspaceFolder}/Calculator/mingw64/bin;${env:PATH}"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    }
+  ]
+}

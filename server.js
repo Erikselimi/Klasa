@@ -28,11 +28,53 @@ const DEFAULT_SCHEDULE = {
   friday: "Art, Edukim fizik, Këshillim klase"
 };
 
-const DEFAULT_SHOP = [
-  { id: "lucky_ticket", name: "Biletë me Fat", price: 25, effectLabel: "Shton fat", description: "Një shans për të rritur fitimin në lojën tjetër." },
-  { id: "shield", name: "Mbrojtje", price: 40, effectLabel: "Mbron humbjen", description: "Mbron nga humbja e parë në një duel ose bet." },
-  { id: "double", name: "Double Up", price: 30, effectLabel: "Dyfishon fitimin", description: "Dyfishon fitimin në një fitore të ardhshme." }
+const DEFAULT_BUBBLE_SKINS = [
+  { id: "classic", name: "Classic", price: 0, rarity: "free", kind: "bubbleSkin", fill: "#ffffff", border: "#d9e1db", text: "#13212a", pattern: "plain", effectLabel: "Default" },
+  { id: "sage", name: "Sage", price: 12, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f5faf3, #dcefd7)", border: "#b6d9b1", text: "#18311f", pattern: "dots", effectLabel: "Fresh" },
+  { id: "mint", name: "Mint Wave", price: 14, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f4fffb, #d5f5ed)", border: "#a5e0cf", text: "#0f3b33", pattern: "waves", effectLabel: "Soft" },
+  { id: "ocean", name: "Ocean", price: 16, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f2faff, #d9efff)", border: "#9dd0f5", text: "#0d3155", pattern: "stripes", effectLabel: "Cool" },
+  { id: "sunset", name: "Sunset", price: 18, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #fff7f1, #ffe1c7)", border: "#f3b37e", text: "#5c2b10", pattern: "sunset", effectLabel: "Warm" },
+  { id: "berry", name: "Berry", price: 18, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #fff5fb, #f1c7df)", border: "#df8ab8", text: "#532042", pattern: "dots", effectLabel: "Sweet" },
+  { id: "midnight", name: "Midnight", price: 20, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f4f6ff, #dde3ff)", border: "#9aa7f0", text: "#1a2250", pattern: "grid", effectLabel: "Night" },
+  { id: "sand", name: "Sand", price: 10, rarity: "common", kind: "bubbleSkin", fill: "linear-gradient(135deg, #fffaf0, #f5e7c8)", border: "#d8c08e", text: "#5e4522", pattern: "plain", effectLabel: "Calm" },
+  { id: "storm", name: "Storm", price: 22, rarity: "uncommon", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f7f9fb, #dce5ef)", border: "#94a8c1", text: "#26384f", pattern: "grid", effectLabel: "Storm" },
+  { id: "copper", name: "Copper", price: 24, rarity: "uncommon", kind: "bubbleSkin", fill: "linear-gradient(135deg, #fff5ef, #f7d6c3)", border: "#ca8e6d", text: "#5d2f15", pattern: "lines", effectLabel: "Shiny" },
+  { id: "neon", name: "Neon", price: 28, rarity: "uncommon", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f2fff8, #d4f8e8)", border: "#7ad8ad", text: "#0f4330", pattern: "glow", effectLabel: "Bright" },
+  { id: "matrix", name: "Matrix", price: 32, rarity: "uncommon", kind: "bubbleSkin", fill: "linear-gradient(135deg, #f3fff3, #d7ffd8)", border: "#7dc97f", text: "#173a18", pattern: "code", effectLabel: "Digital" },
+  { id: "marble", name: "Marble", price: 38, rarity: "rare", kind: "bubbleSkin", asset: "Marble.png", border: "#b9c0c8", text: "#13212a", pattern: "image", effectLabel: "Marble" },
+  { id: "majestic", name: "Majestic", price: 46, rarity: "rare", kind: "bubbleSkin", asset: "Majestic.png", border: "#98774a", text: "#24180d", pattern: "image", effectLabel: "Royal" },
+  { id: "lightning", name: "Lightning", price: 52, rarity: "rare", kind: "bubbleSkin", asset: "Lightning_veins.png", border: "#b9b8ff", text: "#1e2246", pattern: "image", effectLabel: "Electric" },
+  { id: "glitch", name: "Glitch", price: 58, rarity: "rare", kind: "bubbleSkin", asset: "Giltch.png", border: "#ff75d7", text: "#2a0f25", pattern: "image", effectLabel: "Glitch" },
+  { id: "galaxy", name: "Galaxy", price: 80, rarity: "epic", kind: "bubbleSkin", asset: "Galaxy.png", border: "#9b8cff", text: "#ffffff", pattern: "image", effectLabel: "Rare" },
+  { id: "prism", name: "Prism", price: 90, rarity: "epic", kind: "bubbleSkin", fill: "linear-gradient(135deg, #fefefe, #e8fff8, #fff0f7)", border: "#b7d8f4", text: "#13212a", pattern: "prism", effectLabel: "Prismatic" },
+  { id: "aurora", name: "Aurora", price: 110, rarity: "legendary", kind: "bubbleSkin", fill: "linear-gradient(135deg, #e8fff2, #e2f0ff, #f8e7ff)", border: "#9ab7ff", text: "#13212a", pattern: "aurora", effectLabel: "Legendary" }
 ];
+
+const DEFAULT_SHOP = [
+  ...[
+    { id: "lucky_ticket", name: "Biletë me Fat", price: 25, effectLabel: "Shton fat", description: "Një shans për të rritur fitimin në lojën tjetër.", kind: "utility" },
+    { id: "shield", name: "Mbrojtje", price: 40, effectLabel: "Mbron humbjen", description: "Mbron nga humbja e parë në një duel ose bet.", kind: "utility" },
+    { id: "double", name: "Double Up", price: 30, effectLabel: "Dyfishon fitimin", description: "Dyfishon fitimin në një fitore të ardhshme.", kind: "utility" }
+  ],
+  ...DEFAULT_BUBBLE_SKINS.map((skin) => ({
+    ...skin,
+    description: skin.rarity === "legendary"
+      ? "Një skin shumë i rrallë për chat bubble."
+      : skin.rarity === "epic"
+        ? "Skin me shkëlqim dhe efekt unik."
+        : "Skin për ta bërë chat-in më personal."
+  }))
+];
+
+function mergeShop(inputShop) {
+  const incoming = Array.isArray(inputShop) ? inputShop : [];
+  const byId = new Map(incoming.map((item) => [item.id, item]));
+  const merged = DEFAULT_SHOP.map((item) => ({ ...item, ...(byId.get(item.id) || {}) }));
+  for (const item of incoming) {
+    if (!merged.some((entry) => entry.id === item.id)) merged.push(item);
+  }
+  return merged;
+}
 
 const BAD_WORDS = [
   "fuck",
@@ -245,6 +287,8 @@ function defaultData() {
         points: 2,
         money: 20,
         inventory: [],
+        equippedBubbleSkinId: "classic",
+        spinCooldownUntil: null,
         createdAt: now(),
         updatedAt: now()
       },
@@ -257,6 +301,8 @@ function defaultData() {
         points: 2,
         money: 15,
         inventory: [],
+        equippedBubbleSkinId: "classic",
+        spinCooldownUntil: null,
         createdAt: now(),
         updatedAt: now()
       }
@@ -288,6 +334,8 @@ function normalizeData(input) {
       points: Number(p.points || 0),
       money: Number(p.money || 0),
       inventory: Array.isArray(p.inventory) ? p.inventory : [],
+      equippedBubbleSkinId: p.equippedBubbleSkinId || "classic",
+      spinCooldownUntil: p.spinCooldownUntil || null,
       timeoutUntil: p.timeoutUntil || null,
       timeoutReason: p.timeoutReason || "",
       dailyRewardAt: p.dailyRewardAt || null,
@@ -302,7 +350,7 @@ function normalizeData(input) {
     reports: Array.isArray(input.reports) ? input.reports : fresh.reports,
     connect4: normalizeConnect4(input.connect4),
     blackjackSessions: typeof input.blackjackSessions === "object" && input.blackjackSessions ? input.blackjackSessions : fresh.blackjackSessions,
-    shop: Array.isArray(input.shop) ? input.shop : fresh.shop,
+    shop: mergeShop(input.shop),
     creatorActive: Boolean(input.creatorActive)
   };
 }
@@ -531,6 +579,8 @@ async function main() {
         points: 0,
         money: 20,
         inventory: [],
+        equippedBubbleSkinId: "classic",
+        spinCooldownUntil: null,
         timeoutUntil: null,
         timeoutReason: "",
         dailyRewardAt: null,
@@ -577,6 +627,7 @@ async function main() {
       author,
       text,
       image: body.image || "",
+      bubbleSkinId: profile?.equippedBubbleSkinId || "classic",
       createdAt: now()
     });
   }
@@ -1279,9 +1330,66 @@ async function main() {
     return { ok: true, reward: 10, message: "Morre 10 coins reward ditor." };
   }
 
+  function chooseBubbleSkinReward() {
+    const cosmeticSkins = DEFAULT_BUBBLE_SKINS.filter((skin) => skin.price > 0);
+    const rarePool = cosmeticSkins.filter((skin) => skin.rarity === "rare" || skin.rarity === "epic" || skin.rarity === "legendary");
+    const coinReward = [8, 12, 15, 20, 25, 30];
+    const roll = Math.random();
+    if (roll < 0.62) return { type: "coins", amount: coinReward[Math.floor(Math.random() * coinReward.length)] };
+    if (roll < 0.84) return { type: "coins", amount: 40 };
+    if (roll < 0.95) return { type: "skin", skin: cosmeticSkins[Math.floor(Math.random() * cosmeticSkins.length)] };
+    return { type: "skin", skin: rarePool[Math.floor(Math.random() * rarePool.length)] || cosmeticSkins[0] };
+  }
+
+  function addSpinReward(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për spin-in e parasë.");
+    if (isTimedOut(profile)) throw new Error(`Je në timeout deri më ${formatTimeout(profile)}.`);
+    const cooldownMs = 2 * 60 * 60 * 1000;
+    const readyAt = profile.spinCooldownUntil ? new Date(profile.spinCooldownUntil).getTime() : 0;
+    if (readyAt > Date.now()) {
+      throw new Error(`Spin-i është gati përsëri më ${new Date(readyAt).toLocaleString("sq-AL")}.`);
+    }
+    const reward = chooseBubbleSkinReward();
+    profile.spinCooldownUntil = new Date(Date.now() + cooldownMs).toISOString();
+    profile.updatedAt = now();
+    if (reward.type === "coins") {
+      profile.money = moneyFor(profile) + reward.amount;
+      return { ok: true, type: "coins", reward: reward.amount, message: `Spin-i të dha ${reward.amount}$.` };
+    }
+    const skin = reward.skin;
+    profile.inventory = profile.inventory || [];
+    const alreadyOwned = profile.inventory.some((item) => item.type === "bubbleSkin" && item.itemId === skin.id);
+    if (!alreadyOwned) {
+      profile.inventory.push({
+        itemId: skin.id,
+        name: skin.name,
+        type: "bubbleSkin",
+        rarity: skin.rarity,
+        boughtAt: now()
+      });
+    }
+    return { ok: true, type: "skin", skinId: skin.id, reward: skin.name, message: `${skin.name} u zhbllokua nga spin-i.` };
+  }
+
   function createBugReport(body) {
     createReport(body);
     return { ok: true };
+  }
+
+  function equipBubbleSkin(body) {
+    const profile = getProfile(data, body.clientId);
+    if (!profile) throw new Error("Duhet profil për të vendosur skin.");
+    const skinId = String(body.skinId || "").trim();
+    const skin = DEFAULT_BUBBLE_SKINS.find((item) => item.id === skinId);
+    if (!skin) throw new Error("Skin-i nuk u gjet.");
+    if (skin.id !== "classic") {
+      const ownsSkin = (profile.inventory || []).some((item) => item.type === "bubbleSkin" && item.itemId === skin.id);
+      if (!ownsSkin) throw new Error("Duhet ta kesh në inventory për ta vendosur.");
+    }
+    profile.equippedBubbleSkinId = skin.id;
+    profile.updatedAt = now();
+    return { ok: true, skinId: skin.id, message: `${skin.name} u vendos si chat bubble.` };
   }
 
   function buyShopItem(body) {
@@ -1289,10 +1397,24 @@ async function main() {
     if (!profile) throw new Error("Duhet profil për të blerë.");
     const item = data.shop.find((s) => s.id === body.itemId);
     if (!item) throw new Error("Artikulli nuk u gjet.");
+    if (item.kind === "bubbleSkin") {
+      const alreadyOwned = (profile.inventory || []).some((entry) => entry.type === "bubbleSkin" && entry.itemId === item.id);
+      if (alreadyOwned) {
+        profile.equippedBubbleSkinId = item.id;
+        profile.updatedAt = now();
+        return;
+      }
+    }
     if (moneyFor(profile) < item.price) throw new Error("Nuk ke mjaftueshëm bucks.");
     profile.money = moneyFor(profile) - item.price;
     profile.inventory = profile.inventory || [];
-    profile.inventory.push({ itemId: item.id, name: item.name, boughtAt: now() });
+    profile.inventory.push({
+      itemId: item.id,
+      name: item.name,
+      type: item.kind === "bubbleSkin" ? "bubbleSkin" : "utility",
+      rarity: item.rarity || "common",
+      boughtAt: now()
+    });
     profile.updatedAt = now();
   }
 
@@ -1494,6 +1616,18 @@ async function main() {
       if (req.method === "POST" && pathname === "/api/rewards/daily") {
         const body = await parseBody(req);
         const result = addDailyReward(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/rewards/spin") {
+        const body = await parseBody(req);
+        const result = addSpinReward(body);
+        return saveAndRespond(res, result);
+      }
+
+      if (req.method === "POST" && pathname === "/api/shop/equip") {
+        const body = await parseBody(req);
+        const result = equipBubbleSkin(body);
         return saveAndRespond(res, result);
       }
 
