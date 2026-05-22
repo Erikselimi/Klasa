@@ -4,12 +4,15 @@ const path = require("path");
 const crypto = require("crypto");
 const { URL } = require("url");
 const { createClient } = require("@supabase/supabase-js");
+require("dotenv").config();
 
 const PORT = Number(process.env.PORT || 3000);
 const CREATOR_PASSWORD = process.env.CREATOR_PASSWORD || "Erik2011";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "chat-latest";
-const AI_PROVIDER = (process.env.AI_PROVIDER || "").trim().toLowerCase() || (process.env.OLLAMA_BASE_URL ? "ollama" : "openai");
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const AI_PROVIDER = (process.env.AI_PROVIDER || "").trim().toLowerCase() || (process.env.OLLAMA_BASE_URL ? "ollama" : (process.env.GEMINI_API_KEY ? "gemini" : "openai"));
 const HAS_OLLAMA_URL = Boolean(process.env.OLLAMA_BASE_URL);
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
@@ -1292,6 +1295,54 @@ async function main() {
     return { reply, usage: "ollama" };
   }
 
+  async function callGemini(profile, text) {
+    const systemPrompt = "Je një assistant i klasës 9/1. Përgjigju shkurt, qartë, në shqip. Ndihmo me faqen, lojërat, dhe shpjegime të thjeshta. Mos jep këshilla për mashtrim, urrejtje, ose gjëra të dëmshme.";
+    const userPrompt = `Profili: ${displayName(profile)}. Pyetja: ${text}`;
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [
+            {
+              text: systemPrompt
+            }
+          ]
+        },
+        contents: [
+          {
+            parts: [
+              {
+                text: userPrompt
+              }
+            ]
+          }
+        ],
+        generation_config: {
+          max_output_tokens: 300
+        }
+      })
+    });
+    
+    const raw = await response.text();
+    if (!response.ok) {
+      let parsed = null;
+      try {
+        parsed = raw ? JSON.parse(raw) : null;
+      } catch {}
+      const message = parsed?.error?.message || parsed?.message || raw || `Gemini HTTP ${response.status}`;
+      throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+    }
+    
+    const json = raw ? JSON.parse(raw) : {};
+    const reply = String(json?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+    if (!reply) throw new Error("Nuk mora përgjigje nga Gemini.");
+    return { reply, usage: "gemini" };
+  }
+
   async function askOpenAi(body) {
     const profile = getProfile(data, body.clientId);
     if (!profile) throw new Error("Duhet profil për AI.");
@@ -1305,12 +1356,18 @@ async function main() {
     if (AI_PROVIDER === "ollama") {
       return callOllama(profile, text);
     }
-    if (!OPENAI_API_KEY) {
+    if (AI_PROVIDER === "gemini" && GEMINI_API_KEY) {
+      return callGemini(profile, text);
+    }
+    if (GEMINI_API_KEY && !OPENAI_API_KEY && !HAS_OLLAMA_URL) {
+      return callGemini(profile, text);
+    }
+    if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
       if (HAS_OLLAMA_URL || AI_PROVIDER === "ollama") {
         return callOllama(profile, text);
       }
       return {
-        reply: "AI nuk është konfiguruar ende. Vendos OPENAI_API_KEY ose OLLAMA_BASE_URL që të flasë me ty.",
+        reply: "AI nuk është konfiguruar ende. Vendos OPENAI_API_KEY, GEMINI_API_KEY ose OLLAMA_BASE_URL që të flasë me ty.",
         usage: "offline"
       };
     }

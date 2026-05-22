@@ -204,12 +204,26 @@
     th { background:#f7faf8; color:var(--primary); font-size:.92rem; }
 
     .feed {
-      height:360px; overflow:auto; display:grid; gap:12px; padding:16px; border-radius:18px; border:1px solid var(--border);
+      height:360px;
+      overflow:auto;
+      display:grid;
+      gap:12px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--border);
       background: linear-gradient(180deg, #fff, #f7faf8);
+      align-content:start;
     }
     .message {
-      max-width:min(700px, 92%); padding:12px 14px; border-radius:18px; background:#fff; border:1px solid var(--border);
+      max-width:min(700px, 92%);
+      padding:12px 14px;
+      border-radius:18px;
+      background:#fff;
+      border:1px solid var(--border);
       box-shadow: 0 8px 18px rgba(18,33,43,.04);
+      display:flex;
+      flex-direction:column;
+      gap:8px;
     }
     .message.self { margin-left:auto; background:#eef7ef; border-color:#d8ebde; }
     .message.system { margin:0 auto; background:#f1f5f9; color:var(--muted); font-style:italic; text-align:center; }
@@ -228,13 +242,30 @@
       background-image: var(--bubble-image, none);
       background-size: cover;
       background-position:center;
-      opacity:.16;
+      opacity:.22;
       pointer-events:none;
+    }
+    .bubble-art {
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.32;
+      pointer-events:none;
+      z-index:0;
+      filter:saturate(1.05);
     }
     .message.skin .message-head,
     .message.skin .bubble-line { position:relative; z-index:1; }
+    .message.skin .message-head { margin-bottom:0; }
     .message-head {
       display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:8px; font-size:.8rem; color: var(--muted);
+    }
+    .bubble-line {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.45;
     }
     .message img { display:block; width:100%; max-width:420px; margin-top:10px; border-radius:14px; }
 
@@ -268,6 +299,7 @@
       position:relative;
       z-index:1;
     }
+    .bubble-preview .bubble-art { opacity:.38; }
     .bubble-body {
       padding:14px;
       display:grid;
@@ -1325,7 +1357,7 @@
       const fill = skin.fill || "#ffffff";
       const border = skin.border || "#d9e1db";
       const text = skin.text || "#13212a";
-      const image = skin.asset ? `url("${skin.asset}")` : "none";
+      const image = skin.asset ? `url("/${skin.asset}")` : "none";
       return `--bubble-fill:${fill};--bubble-border:${border};--bubble-text:${text};--bubble-image:${image};`;
     }
 
@@ -1333,6 +1365,7 @@
       return `
         <article class="bubble-skin-card">
           <div class="bubble-preview" style="${bubbleSkinVars(item)}">
+            ${item.asset ? `<img class="bubble-art" src="/${item.asset}" alt="${escapeHtml(item.name)}" />` : ""}
             <strong>${escapeHtml(item.name)}</strong>
             <div class="note">${escapeHtml(item.effectLabel || item.rarity || "skin")}</div>
             <div class="chips" style="margin-top:10px;">
@@ -1617,6 +1650,7 @@
         const skin = bubbleSkinById(m.bubbleSkinId || me?.equippedBubbleSkinId || "classic");
         return `
           <div class="message ${self ? "self" : ""} skin" style="${bubbleSkinVars(skin)}">
+            ${skin.asset ? `<img class="bubble-art" src="/${skin.asset}" alt="" aria-hidden="true" />` : ""}
             <div class="message-head">
               <strong>${escapeHtml(m.author)}</strong>
               <span>${new Date(m.createdAt).toLocaleTimeString("sq-AL", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -1626,6 +1660,8 @@
           </div>
         `;
       }).join("");
+      const chatFeed = $("#chatFeed");
+      chatFeed.scrollTop = chatFeed.scrollHeight;
 
       $("#studentSelect").innerHTML = rosterProfiles().map((p) => `<option value="${p.id}">${escapeHtml(profileDisplay(p))}</option>`).join("");
       $("#manualMoneyStudent").innerHTML = rosterProfiles().map((p) => `<option value="${p.id}">${escapeHtml(profileDisplay(p))}</option>`).join("");
